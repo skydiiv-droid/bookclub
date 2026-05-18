@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f5efe6">
+<title>책모임</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/[email protected]/dist/web/variable/pretendardvariable.min.css">
+
+<style>
+:root {
+  --bg: #f5efe6;
+  --bg-card: #faf6ee;
+  --bg-soft: #ede5d3;
+  --ink: #1a1815;
+  --ink-soft: #5a5450;
+  --ink-mute: #8b857e;
+  --accent: #8b4513;
+  --accent-light: #c4986a;
+  --accent-bg: #ead9c0;
+  --line: #ddd5c7;
+  --line-soft: #e8e0d2;
+  --danger: #a83232;
+  --success: #4a7c4a;
+  --shadow: 0 1px 2px rgba(26,24,21,0.04), 0 4px 12px rgba(26,24,21,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.serif {
+  font-family: 'Fraunces', 'Pretendard Variable', serif;
+  font-optical-sizing: auto;
+  letter-spacing: -0.015em;
+  font-weight: 400;
+}
+
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; font-size: inherit; }
+input, textarea, select { font-family: inherit; font-size: inherit; color: inherit; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Layout */
+#app { max-width: 640px; margin: 0 auto; min-height: 100vh; padding: 0; }
+.screen { padding: 24px 20px 80px; }
+
+/* Loading */
+.loading-screen {
+  min-height: 100vh; display: grid; place-items: center;
+  color: var(--ink-mute); font-size: 14px;
+}
+.spinner {
+  width: 24px; height: 24px; border: 2px solid var(--line); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Login */
+.login {
+  min-height: 100vh; display: flex; flex-direction: column;
+  justify-content: center; align-items: center; padding: 40px 24px;
+  text-align: center; gap: 32px;
+}
+.login-mark { font-size: 56px; line-height: 1; margin-bottom: 8px; }
+.login h1 { font-size: 40px; font-weight: 400; letter-spacing: -0.02em; }
+.login h1 em { font-style: italic; color: var(--accent); }
+.login p { color: var(--ink-soft); max-width: 280px; font-size: 14px; }
+.google-btn {
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 14px 28px; background: var(--ink); color: #faf6ee;
+  border-radius: 999px; font-size: 15px; font-weight: 500;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.google-btn:active { transform: scale(0.97); }
+.google-btn svg { width: 18px; height: 18px; }
+
+/* Header */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--line-soft);
+  background: var(--bg); position: sticky; top: 0; z-index: 10;
+}
+.header-left { display: flex; align-items: center; gap: 12px; }
+.icon-btn {
+  width: 36px; height: 36px; border-radius: 999px;
+  display: grid; place-items: center; color: var(--ink-soft);
+  transition: background 0.15s ease;
+}
+.icon-btn:hover { background: var(--bg-soft); }
+.icon-btn svg { width: 18px; height: 18px; }
+.header-title {
+  font-family: 'Fraunces', serif; font-size: 22px; font-weight: 400;
+  letter-spacing: -0.015em;
+}
+.header-title small { display: block; font-size: 11px; color: var(--ink-mute); letter-spacing: 0.05em; text-transform: uppercase; font-family: 'Pretendard Variable', sans-serif; font-weight: 500; margin-bottom: 2px; }
+.user-avatar { width: 32px; height: 32px; border-radius: 999px; overflow: hidden; }
+.user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Club list */
+.section-title {
+  font-family: 'Fraunces', serif; font-size: 28px; font-weight: 400;
+  letter-spacing: -0.015em; margin-bottom: 4px;
+}
+.section-sub { color: var(--ink-mute); font-size: 13px; margin-bottom: 24px; }
+
+.club-card {
+  background: var(--bg-card); border: 1px solid var(--line-soft);
+  border-radius: 14px; padding: 18px 20px; margin-bottom: 12px;
+  cursor: pointer; transition: transform 0.15s ease, border-color 0.15s ease;
+  display: block; width: 100%; text-align: left;
+}
+.club-card:hover { border-color: var(--accent-light); }
+.club-card:active { transform: scale(0.99); }
+.club-card-title {
+  font-family: 'Fraunces', serif; font-size: 19px; font-weight: 500;
+  letter-spacing: -0.01em; margin-bottom: 6px; color: var(--ink);
+}
+.club-card-meta { font-size: 12px; color: var(--ink-mute); display: flex; gap: 12px; }
+.club-card-badge {
+  display: inline-block; font-size: 11px; padding: 2px 8px;
+  background: var(--accent-bg); color: var(--accent);
+  border-radius: 999px; font-weight: 500; letter-spacing: 0.02em;
+}
+.club-card-pending { opacity: 0.6; }
+.club-card-pending .club-card-badge { background: var(--line); color: var(--ink-soft); }
+
+/* Actions row */
+.actions-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 24px 0 8px; }
+.action-btn {
+  padding: 14px; border: 1px dashed var(--line); border-radius: 12px;
+  font-size: 13px; color: var(--ink-soft); transition: all 0.15s ease;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.action-btn:hover { border-color: var(--accent); color: var(--accent); }
+.action-btn svg { width: 14px; height: 14px; }
+
+/* Toggle */
+.view-toggle {
+  display: inline-flex; background: var(--bg-soft); border-radius: 999px;
+  padding: 3px; gap: 0;
+}
+.view-toggle button {
+  padding: 6px 14px; border-radius: 999px; font-size: 13px;
+  color: var(--ink-mute); transition: all 0.2s ease; font-weight: 500;
+}
+.view-toggle button.active { background: var(--ink); color: var(--bg-card); }
+
+/* Calendar */
+.calendar-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 4px 16px;
+}
+.calendar-month-label {
+  font-family: 'Fraunces', serif; font-size: 22px; font-weight: 400;
+  letter-spacing: -0.015em;
+}
+.calendar-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+  background: var(--bg-card); border-radius: 14px; padding: 12px 8px;
+  border: 1px solid var(--line-soft);
+}
+.cal-dow {
+  text-align: center; font-size: 10px; color: var(--ink-mute);
+  padding: 8px 0 4px; letter-spacing: 0.08em; font-weight: 500;
+  text-transform: uppercase;
+}
+.cal-day {
+  aspect-ratio: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-start; padding: 6px 2px;
+  border-radius: 8px; font-size: 13px; color: var(--ink-soft);
+  position: relative; gap: 2px;
+  transition: background 0.15s ease;
+}
+.cal-day.other-month { color: var(--ink-mute); opacity: 0.35; }
+.cal-day.today { color: var(--accent); font-weight: 600; }
+.cal-day.today::before {
+  content: ''; position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
+  width: 24px; height: 24px; border-radius: 50%; background: var(--accent-bg); z-index: -1;
+}
+.cal-day.has-meeting { cursor: pointer; font-weight: 500; color: var(--ink); }
+.cal-day.has-meeting:hover { background: var(--bg-soft); }
+.cal-dot {
+  width: 5px; height: 5px; border-radius: 50%; background: var(--accent);
+  margin-top: auto; margin-bottom: 2px;
+}
+
+/* Meeting list */
+.meeting-card {
+  background: var(--bg-card); border: 1px solid var(--line-soft);
+  border-radius: 14px; padding: 18px 20px; margin-bottom: 12px;
+  cursor: pointer; transition: border-color 0.15s ease, transform 0.15s ease;
+  display: block; width: 100%; text-align: left;
+}
+.meeting-card:hover { border-color: var(--accent-light); }
+.meeting-card:active { transform: scale(0.99); }
+.meeting-card.past { opacity: 0.7; }
+.meeting-card.past .meeting-status { background: var(--line); color: var(--ink-soft); }
+.meeting-date-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.meeting-date {
+  font-family: 'Fraunces', serif; font-size: 14px; color: var(--accent);
+  font-style: italic; letter-spacing: -0.005em;
+}
+.meeting-status {
+  font-size: 10px; padding: 2px 8px; background: var(--accent-bg);
+  color: var(--accent); border-radius: 999px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.meeting-title {
+  font-family: 'Fraunces', serif; font-size: 18px; font-weight: 500;
+  letter-spacing: -0.01em; line-height: 1.3; margin-bottom: 6px;
+}
+.meeting-meta {
+  font-size: 12px; color: var(--ink-mute); display: flex; gap: 12px; flex-wrap: wrap;
+}
+
+/* Meeting detail */
+.meeting-detail-header {
+  padding: 4px 0 24px; border-bottom: 1px solid var(--line-soft); margin-bottom: 24px;
+}
+.detail-meta-row {
+  display: flex; gap: 8px; margin-bottom: 14px; align-items: center; flex-wrap: wrap;
+}
+.detail-date {
+  font-family: 'Fraunces', serif; font-size: 18px; font-style: italic;
+  color: var(--accent);
+}
+.detail-location { color: var(--ink-soft); font-size: 13px; }
+.detail-book-title {
+  font-family: 'Fraunces', serif; font-size: 30px; font-weight: 400;
+  letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 12px;
+}
+.detail-book-desc {
+  color: var(--ink-soft); font-size: 14px; line-height: 1.65;
+  white-space: pre-wrap; margin-bottom: 10px;
+}
+.detail-book-link {
+  font-size: 13px; display: inline-flex; align-items: center; gap: 4px;
+}
+
+/* Section block */
+.detail-section { margin-bottom: 32px; }
+.detail-section-title {
+  font-size: 12px; color: var(--ink-mute); font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+
+/* RSVP */
+.rsvp-self {
+  display: flex; gap: 6px; padding: 12px; background: var(--bg-card);
+  border-radius: 12px; border: 1px solid var(--line-soft); margin-bottom: 12px;
+}
+.rsvp-self button {
+  flex: 1; padding: 8px; border-radius: 8px; font-size: 13px;
+  background: transparent; color: var(--ink-soft); transition: all 0.15s ease;
+  font-weight: 500;
+}
+.rsvp-self button.active.yes { background: var(--success); color: white; }
+.rsvp-self button.active.maybe { background: var(--accent-light); color: white; }
+.rsvp-self button.active.no { background: var(--ink-soft); color: white; }
+
+.rsvp-list {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.rsvp-row {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+  background: var(--bg-card); border-radius: 10px; font-size: 13px;
+}
+.rsvp-row .avatar {
+  width: 24px; height: 24px; border-radius: 999px; overflow: hidden; flex-shrink: 0;
+  background: var(--bg-soft);
+}
+.rsvp-row .avatar img { width: 100%; height: 100%; object-fit: cover; }
+.rsvp-name { flex: 1; }
+.rsvp-status { font-size: 11px; color: var(--ink-mute); }
+.rsvp-status.yes { color: var(--success); }
+.rsvp-status.maybe { color: var(--accent); }
+.rsvp-status.no { color: var(--ink-mute); }
+
+/* Attendance */
+.attendance-check {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  background: var(--bg-card); border-radius: 10px; margin-bottom: 6px;
+  font-size: 13px;
+}
+.attendance-check label { flex: 1; cursor: pointer; }
+.attendance-check input[type=checkbox] {
+  width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer;
+}
+
+/* Comments */
+.comment {
+  padding: 12px 14px; background: var(--bg-card); border-radius: 10px;
+  margin-bottom: 8px;
+}
+.comment-head {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 12px; color: var(--ink-mute); margin-bottom: 4px;
+}
+.comment-author { font-weight: 600; color: var(--ink-soft); }
+.comment-body { font-size: 14px; line-height: 1.55; white-space: pre-wrap; }
+.comment-form {
+  display: flex; gap: 8px; margin-top: 12px; align-items: flex-end;
+}
+.comment-form textarea {
+  flex: 1; padding: 10px 12px; border: 1px solid var(--line);
+  background: var(--bg-card); border-radius: 10px; resize: none;
+  min-height: 40px; max-height: 120px; font-size: 14px;
+}
+.comment-form textarea:focus { outline: none; border-color: var(--accent); }
+
+/* Reflections */
+.reflection {
+  padding: 14px 16px; background: var(--bg-card); border-radius: 12px;
+  border-left: 3px solid var(--accent-light); margin-bottom: 10px;
+}
+.reflection-author { font-size: 12px; color: var(--accent); font-weight: 600; margin-bottom: 6px; }
+.reflection-body { font-size: 14px; line-height: 1.6; white-space: pre-wrap; font-family: 'Fraunces', serif; font-style: italic; color: var(--ink-soft); }
+
+/* Buttons */
+.btn-primary {
+  background: var(--ink); color: var(--bg-card); padding: 10px 20px;
+  border-radius: 999px; font-size: 13px; font-weight: 500;
+  transition: opacity 0.15s ease;
+}
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-secondary {
+  background: var(--bg-card); color: var(--ink); padding: 8px 14px;
+  border-radius: 999px; font-size: 12px; font-weight: 500;
+  border: 1px solid var(--line);
+}
+.btn-text {
+  font-size: 12px; color: var(--accent); font-weight: 500;
+}
+
+/* Modal */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(26,24,21,0.4);
+  z-index: 100; display: flex; align-items: flex-end; justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } }
+.modal {
+  background: var(--bg); width: 100%; max-width: 640px;
+  border-radius: 20px 20px 0 0; max-height: 90vh; overflow-y: auto;
+  padding: 24px 20px 40px; animation: slideUp 0.25s ease;
+}
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } }
+.modal-title {
+  font-family: 'Fraunces', serif; font-size: 22px; font-weight: 500;
+  letter-spacing: -0.015em; margin-bottom: 4px;
+}
+.modal-sub { color: var(--ink-mute); font-size: 13px; margin-bottom: 20px; }
+.modal-close {
+  position: absolute; top: 16px; right: 16px; width: 32px; height: 32px;
+  border-radius: 999px; background: var(--bg-soft); display: grid; place-items: center;
+}
+
+/* Form */
+.form-field { margin-bottom: 16px; }
+.form-field label {
+  display: block; font-size: 12px; color: var(--ink-soft); font-weight: 500;
+  margin-bottom: 6px; letter-spacing: 0.02em;
+}
+.form-field input, .form-field textarea, .form-field select {
+  width: 100%; padding: 12px 14px; border: 1px solid var(--line);
+  background: var(--bg-card); border-radius: 10px; font-size: 14px;
+  transition: border-color 0.15s ease;
+}
+.form-field input:focus, .form-field textarea:focus, .form-field select:focus {
+  outline: none; border-color: var(--accent);
+}
+.form-field textarea { resize: vertical; min-height: 80px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* Empty state */
+.empty {
+  text-align: center; padding: 40px 20px; color: var(--ink-mute);
+  font-size: 13px; line-height: 1.6;
+}
+.empty .serif { font-size: 18px; color: var(--ink-soft); margin-bottom: 8px; display: block; font-style: italic; }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: var(--bg-card); padding: 10px 18px;
+  border-radius: 999px; font-size: 13px; z-index: 200;
+  animation: toastIn 0.25s ease;
+}
+@keyframes toastIn { from { transform: translate(-50%, 10px); opacity: 0; } }
+
+/* Pending box */
+.pending-box {
+  background: var(--accent-bg); border-radius: 12px; padding: 14px 16px;
+  margin-bottom: 16px; font-size: 13px; color: var(--ink-soft);
+}
+.pending-box strong { color: var(--accent); display: block; margin-bottom: 8px; font-weight: 600; }
+.pending-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 0;
+  border-top: 1px solid rgba(139, 69, 19, 0.15);
+}
+.pending-item:first-of-type { border-top: none; }
+.pending-item .avatar { width: 28px; height: 28px; border-radius: 999px; overflow: hidden; }
+.pending-item .name { flex: 1; }
+.pending-item button { padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 500; }
+.pending-approve { background: var(--accent); color: white; }
+.pending-reject { color: var(--ink-mute); }
+
+/* Invite code box */
+.invite-code-box {
+  background: var(--bg-card); border: 1px dashed var(--accent-light);
+  border-radius: 12px; padding: 16px; text-align: center; margin-bottom: 16px;
+}
+.invite-code-box .label { font-size: 11px; color: var(--ink-mute); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+.invite-code-box .code {
+  font-family: 'Fraunces', serif; font-size: 28px; letter-spacing: 0.15em;
+  color: var(--accent); font-weight: 500;
+}
+
+/* Tabs for RSVP/attendance in list */
+.mini-tabs {
+  display: flex; gap: 4px; font-size: 11px; color: var(--ink-mute);
+  margin-bottom: 8px;
+}
+.locked-notice {
+  font-size: 12px; color: var(--ink-mute); padding: 8px 12px;
+  background: var(--bg-soft); border-radius: 8px; margin-bottom: 8px;
+  text-align: center; font-style: italic;
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="loading-screen"><div class="spinner"></div></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+import {
+  getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+import {
+  getFirestore, collection, collectionGroup, doc, addDoc, setDoc, getDoc, getDocs,
+  updateDoc, deleteDoc, query, where, orderBy, onSnapshot,
+  arrayUnion, arrayRemove, serverTimestamp, Timestamp, deleteField
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+// ============================================================
+// 1) FIREBASE CONFIG — replace with your own
+// ============================================================
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+// ============================================================
+// 2) STATE
+// ============================================================
+const state = {
+  user: null,
+  view: 'loading',            // loading | login | clubList | club
+  clubs: [],
+  pendingClubs: [],
+  currentClubId: null,
+  currentClub: null,
+  meetings: [],
+  currentMeetingId: null,
+  meetingComments: [],
+  meetingReflections: [],
+  calendarMode: 'month',       // month | list
+  calendarMonth: new Date(),
+  unsubs: [],                  // unsubscribe functions for active listeners
+  modal: null,                 // null | 'createClub' | 'joinClub' | 'createMeeting' | 'invite' | 'pending'
+};
+
+const EDIT_LOCK_DAYS = 7;     // meetings can be edited up to N days after meeting date
+
+// ============================================================
+// 3) UTILITIES
+// ============================================================
+const $app = document.getElementById('app');
+const fmtDate = (d) => {
+  if (!d) return '';
+  const date = d.toDate ? d.toDate() : new Date(d);
+  return date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+};
+const fmtTime = (d) => {
+  if (!d) return '';
+  const date = d.toDate ? d.toDate() : new Date(d);
+  return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+};
+const fmtDateShort = (d) => {
+  const date = d.toDate ? d.toDate() : new Date(d);
+  return `${date.getMonth()+1}월 ${date.getDate()}일 ${['일','월','화','수','목','금','토'][date.getDay()]}요일`;
+};
+const fmtMonth = (d) => `${d.getFullYear()}년 ${d.getMonth()+1}월`;
+const escapeHtml = (s) => (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const linkify = (s) => escapeHtml(s).replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+const generateInviteCode = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // exclude ambiguous chars
+  return Array.from({length: 6}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+};
+const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+const isPastEditLock = (meetingDate) => {
+  const d = meetingDate.toDate ? meetingDate.toDate() : new Date(meetingDate);
+  const lock = new Date(d.getTime() + EDIT_LOCK_DAYS * 24 * 60 * 60 * 1000);
+  return new Date() > lock;
+};
+const isPastMeeting = (meetingDate) => {
+  const d = meetingDate.toDate ? meetingDate.toDate() : new Date(meetingDate);
+  return d < new Date();
+};
+
+const toast = (msg) => {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2200);
+};
+
+const clearListeners = () => {
+  state.unsubs.forEach(u => { try { u(); } catch(e) {} });
+  state.unsubs = [];
+};
+
+// ============================================================
+// 4) AUTH
+// ============================================================
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    state.user = {
+      uid: user.uid,
+      name: user.displayName || user.email.split('@')[0],
+      email: user.email,
+      photo: user.photoURL || ''
+    };
+    // upsert user doc
+    await setDoc(doc(db, 'users', user.uid), {
+      name: state.user.name,
+      email: state.user.email,
+      photo: state.user.photo,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    state.view = 'clubList';
+    listenToClubs();
+  } else {
+    state.user = null;
+    clearListeners();
+    state.view = 'login';
+    render();
+  }
+});
+
+const handleSignIn = async () => {
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (e) {
+    console.error(e);
+    toast('로그인 실패: ' + e.message);
+  }
+};
+
+const handleSignOut = async () => {
+  if (!confirm('로그아웃 할까요?')) return;
+  clearListeners();
+  await signOut(auth);
+};
+
+// ============================================================
+// 5) DATA: CLUBS
+// ============================================================
+const listenToClubs = () => {
+  clearListeners();
+  // active member clubs
+  const qActive = query(collection(db, 'clubs'), where('memberIds', 'array-contains', state.user.uid));
+  const u1 = onSnapshot(qActive, snap => {
+    state.clubs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (state.view === 'clubList') render();
+    if (state.view === 'club' && state.currentClubId) {
+      const c = state.clubs.find(x => x.id === state.currentClubId);
+      if (c) { state.currentClub = c; render(); }
+    }
+  });
+  // pending clubs
+  const qPending = query(collection(db, 'clubs'), where('pendingIds', 'array-contains', state.user.uid));
+  const u2 = onSnapshot(qPending, snap => {
+    state.pendingClubs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (state.view === 'clubList') render();
+  });
+  state.unsubs.push(u1, u2);
+};
+
+const createClub = async (name, description) => {
+  const inviteCode = generateInviteCode();
+  const userInfo = { name: state.user.name, photo: state.user.photo };
+  const ref = await addDoc(collection(db, 'clubs'), {
+    name,
+    description: description || '',
+    hostId: state.user.uid,
+    hostName: state.user.name,
+    inviteCode,
+    memberIds: [state.user.uid],
+    memberInfo: { [state.user.uid]: userInfo },
+    pendingIds: [],
+    pendingInfo: {},
+    createdAt: serverTimestamp()
+  });
+  // Separate invite-code lookup doc — public read so non-members can resolve code → clubId
+  await setDoc(doc(db, 'inviteCodes', inviteCode), {
+    clubId: ref.id,
+    createdBy: state.user.uid,
+    createdAt: serverTimestamp()
+  });
+  toast('모임이 생성됐어요');
+  return ref.id;
+};
+
+const joinClubByCode = async (code) => {
+  const codeUpper = code.toUpperCase().trim();
+  // Look up clubId via inviteCodes collection (publicly readable for auth users)
+  const codeSnap = await getDoc(doc(db, 'inviteCodes', codeUpper));
+  if (!codeSnap.exists()) { toast('유효하지 않은 코드예요'); return; }
+  const { clubId } = codeSnap.data();
+  // Try to join — write-only since user can't read club doc until they're in members/pending
+  try {
+    await updateDoc(doc(db, 'clubs', clubId), {
+      pendingIds: arrayUnion(state.user.uid),
+      [`pendingInfo.${state.user.uid}`]: {
+        name: state.user.name,
+        photo: state.user.photo,
+        requestedAt: Timestamp.now()
+      }
+    });
+    toast('가입 신청을 보냈어요. 모임장 승인을 기다려주세요.');
+  } catch (e) {
+    if (e.code === 'permission-denied') {
+      toast('이미 가입했거나 신청 중이에요');
+    } else {
+      console.error(e);
+      toast('가입 중 오류: ' + e.message);
+    }
+  }
+};
+
+const approvePending = async (clubId, userId) => {
+  const club = state.currentClub;
+  if (!club) return;
+  const info = club.pendingInfo?.[userId];
+  if (!info) return;
+  await updateDoc(doc(db, 'clubs', clubId), {
+    memberIds: arrayUnion(userId),
+    [`memberInfo.${userId}`]: { name: info.name, photo: info.photo },
+    pendingIds: arrayRemove(userId),
+    [`pendingInfo.${userId}`]: deleteField()
+  });
+  toast('승인됨');
+};
+
+const rejectPending = async (clubId, userId) => {
+  await updateDoc(doc(db, 'clubs', clubId), {
+    pendingIds: arrayRemove(userId),
+    [`pendingInfo.${userId}`]: deleteField()
+  });
+  toast('거절됨');
+};
+
+// ============================================================
+// 6) DATA: MEETINGS
+// ============================================================
+const listenToMeetings = (clubId) => {
+  const q = query(collection(db, 'clubs', clubId, 'meetings'), orderBy('meetingDate', 'desc'));
+  const u = onSnapshot(q, snap => {
+    state.meetings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (state.view === 'club') render();
+  });
+  state.unsubs.push(u);
+};
+
+const createMeeting = async (clubId, data) => {
+  await addDoc(collection(db, 'clubs', clubId, 'meetings'), {
+    meetingDate: Timestamp.fromDate(data.meetingDate),
+    location: data.location || '',
+    bookTitle: data.bookTitle,
+    bookDescription: data.bookDescription || '',
+    bookLink: data.bookLink || '',
+    rsvp: {},
+    attendees: [],
+    createdAt: serverTimestamp(),
+    createdBy: state.user.uid
+  });
+  toast('회차가 생성됐어요');
+};
+
+const updateRSVP = async (clubId, meetingId, status) => {
+  await updateDoc(doc(db, 'clubs', clubId, 'meetings', meetingId), {
+    [`rsvp.${state.user.uid}`]: status
+  });
+};
+
+const toggleAttendance = async (clubId, meetingId, userId, current) => {
+  await updateDoc(doc(db, 'clubs', clubId, 'meetings', meetingId), {
+    attendees: current ? arrayRemove(userId) : arrayUnion(userId)
+  });
+};
+
+const deleteMeeting = async (clubId, meetingId) => {
+  if (!confirm('이 회차를 삭제할까요? 댓글·소감도 함께 사라져요.')) return;
+  await deleteDoc(doc(db, 'clubs', clubId, 'meetings', meetingId));
+  state.currentMeetingId = null;
+  toast('삭제됐어요');
+  render();
+};
+
+// ============================================================
+// 7) DATA: COMMENTS + REFLECTIONS
+// ============================================================
+let commentsUnsub = null;
+let reflectionsUnsub = null;
+
+const listenToMeetingSubdata = (clubId, meetingId) => {
+  if (commentsUnsub) commentsUnsub();
+  if (reflectionsUnsub) reflectionsUnsub();
+  const qC = query(collection(db, 'clubs', clubId, 'meetings', meetingId, 'comments'), orderBy('createdAt', 'asc'));
+  commentsUnsub = onSnapshot(qC, snap => {
+    state.meetingComments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (state.currentMeetingId === meetingId) render();
+  });
+  const qR = collection(db, 'clubs', clubId, 'meetings', meetingId, 'reflections');
+  reflectionsUnsub = onSnapshot(qR, snap => {
+    state.meetingReflections = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (state.currentMeetingId === meetingId) render();
+  });
+};
+
+const addComment = async (clubId, meetingId, text) => {
+  if (!text.trim()) return;
+  await addDoc(collection(db, 'clubs', clubId, 'meetings', meetingId, 'comments'), {
+    authorId: state.user.uid,
+    authorName: state.user.name,
+    authorPhoto: state.user.photo,
+    text: text.trim(),
+    createdAt: serverTimestamp()
+  });
+};
+
+const deleteComment = async (clubId, meetingId, commentId) => {
+  if (!confirm('이 댓글을 삭제할까요?')) return;
+  await deleteDoc(doc(db, 'clubs', clubId, 'meetings', meetingId, 'comments', commentId));
+};
+
+const saveReflection = async (clubId, meetingId, text) => {
+  if (!text.trim()) return;
+  await setDoc(doc(db, 'clubs', clubId, 'meetings', meetingId, 'reflections', state.user.uid), {
+    authorId: state.user.uid,
+    authorName: state.user.name,
+    text: text.trim(),
+    updatedAt: serverTimestamp()
+  });
+  toast('소감이 저장됐어요');
+};
+
+// ============================================================
+// 8) RENDERING
+// ============================================================
+const iconArrowLeft = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>`;
+const iconArrowRight = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`;
+const iconPlus = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>`;
+const iconKey = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>`;
+const iconSettings = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`;
+const iconX = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>`;
+const iconLogout = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>`;
+
+const render = () => {
+  switch (state.view) {
+    case 'loading': renderLoading(); break;
+    case 'login': renderLogin(); break;
+    case 'clubList': renderClubList(); break;
+    case 'club': renderClub(); break;
+  }
+  renderModal();
+};
+
+const renderLoading = () => {
+  $app.innerHTML = `<div class="loading-screen"><div class="spinner"></div></div>`;
+};
+
+const renderLogin = () => {
+  $app.innerHTML = `
+    <div class="login">
+      <div class="login-mark serif">❦</div>
+      <div>
+        <h1 class="serif">읽고, <em>나누고</em>,<br>기록하다</h1>
+      </div>
+      <p>책모임 일정을 함께 정하고, 누가 왔는지, 무엇을 읽었는지 차곡차곡 남겨두는 공간.</p>
+      <button class="google-btn" id="signin-btn">
+        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/></svg>
+        Google로 시작하기
+      </button>
+    </div>
+  `;
+  document.getElementById('signin-btn').addEventListener('click', handleSignIn);
+};
+
+const renderClubList = () => {
+  $app.innerHTML = `
+    <div class="header">
+      <div class="header-left">
+        <div class="header-title">
+          <small>나의 책모임</small>
+          ${state.user.name}님
+        </div>
+      </div>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <button class="icon-btn" id="signout-btn" title="로그아웃">${iconLogout}</button>
+        <div class="user-avatar">${state.user.photo ? `<img src="${state.user.photo}" alt="">` : `<div style="background:var(--bg-soft); width:100%; height:100%; display:grid; place-items:center; font-size:12px; color:var(--ink-mute);">${state.user.name[0]}</div>`}</div>
+      </div>
+    </div>
+    <div class="screen">
+      <h2 class="section-title serif">참여 중인 모임</h2>
+      <p class="section-sub">${state.clubs.length}개의 모임</p>
+
+      ${state.clubs.length === 0 && state.pendingClubs.length === 0 ? `
+        <div class="empty">
+          <span class="serif">아직 참여 중인 모임이 없어요</span>
+          <div>아래 버튼으로 새 모임을 만들거나, 초대 코드로 가입해보세요.</div>
+        </div>
+      ` : ''}
+
+      ${state.clubs.map(c => `
+        <button class="club-card" data-club-id="${c.id}">
+          <div class="club-card-title">${escapeHtml(c.name)}</div>
+          <div class="club-card-meta">
+            <span class="club-card-badge">${c.hostId === state.user.uid ? '모임장' : '멤버'}</span>
+            <span>멤버 ${c.memberIds?.length || 0}명</span>
+            ${c.pendingIds?.length && c.hostId === state.user.uid ? `<span style="color:var(--accent)">승인 대기 ${c.pendingIds.length}</span>` : ''}
+          </div>
+        </button>
+      `).join('')}
+
+      ${state.pendingClubs.map(c => `
+        <div class="club-card club-card-pending">
+          <div class="club-card-title">${escapeHtml(c.name)}</div>
+          <div class="club-card-meta">
+            <span class="club-card-badge">승인 대기 중</span>
+          </div>
+        </div>
+      `).join('')}
+
+      <div class="actions-row">
+        <button class="action-btn" id="create-club-btn">${iconPlus} 새 모임 만들기</button>
+        <button class="action-btn" id="join-club-btn">${iconKey} 코드로 가입</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('signout-btn').addEventListener('click', handleSignOut);
+  document.querySelectorAll('[data-club-id]').forEach(b => {
+    b.addEventListener('click', () => openClub(b.dataset.clubId));
+  });
+  document.getElementById('create-club-btn').addEventListener('click', () => { state.modal = 'createClub'; render(); });
+  document.getElementById('join-club-btn').addEventListener('click', () => { state.modal = 'joinClub'; render(); });
+};
+
+const openClub = (clubId) => {
+  state.currentClubId = clubId;
+  state.currentClub = state.clubs.find(c => c.id === clubId);
+  state.view = 'club';
+  state.currentMeetingId = null;
+  listenToMeetings(clubId);
+  render();
+};
+
+const backToClubList = () => {
+  state.currentClubId = null;
+  state.currentClub = null;
+  state.currentMeetingId = null;
+  state.meetings = [];
+  if (commentsUnsub) { commentsUnsub(); commentsUnsub = null; }
+  if (reflectionsUnsub) { reflectionsUnsub(); reflectionsUnsub = null; }
+  state.view = 'clubList';
+  render();
+};
+
+const renderClub = () => {
+  if (!state.currentClub) { renderLoading(); return; }
+  const isHost = state.currentClub.hostId === state.user.uid;
+  const pendingCount = state.currentClub.pendingIds?.length || 0;
+
+  // If a meeting is selected, render meeting detail
+  if (state.currentMeetingId) {
+    renderMeetingDetail();
+    return;
+  }
+
+  $app.innerHTML = `
+    <div class="header">
+      <div class="header-left">
+        <button class="icon-btn" id="back-btn">${iconArrowLeft}</button>
+        <div class="view-toggle">
+          <button data-mode="month" class="${state.calendarMode === 'month' ? 'active' : ''}">월</button>
+          <button data-mode="list" class="${state.calendarMode === 'list' ? 'active' : ''}">회차</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:6px; align-items:center;">
+        ${isHost ? `<button class="icon-btn" id="invite-btn" title="초대 코드">${iconKey}</button>` : ''}
+        ${isHost && pendingCount > 0 ? `<button class="icon-btn" id="pending-btn" title="승인 대기" style="position:relative;">${iconSettings}<span style="position:absolute; top:4px; right:4px; width:8px; height:8px; background:var(--accent); border-radius:999px;"></span></button>` : ''}
+      </div>
+    </div>
+    <div class="screen">
+      <h2 class="section-title serif">${escapeHtml(state.currentClub.name)}</h2>
+      <p class="section-sub">${state.currentClub.memberIds?.length || 0}명 · 모임장 ${escapeHtml(state.currentClub.hostName || '')}${state.currentClub.description ? ' · ' + escapeHtml(state.currentClub.description) : ''}</p>
+
+      ${state.calendarMode === 'month' ? renderMonthView() : renderListView()}
+
+      ${isHost ? `<button class="action-btn" id="create-meeting-btn" style="margin-top:16px;">${iconPlus} 새 회차 만들기</button>` : ''}
+    </div>
+  `;
+  document.getElementById('back-btn').addEventListener('click', backToClubList);
+  document.querySelectorAll('.view-toggle button').forEach(b => {
+    b.addEventListener('click', () => { state.calendarMode = b.dataset.mode; render(); });
+  });
+  if (isHost) {
+    document.getElementById('invite-btn')?.addEventListener('click', () => { state.modal = 'invite'; render(); });
+    document.getElementById('pending-btn')?.addEventListener('click', () => { state.modal = 'pending'; render(); });
+    document.getElementById('create-meeting-btn')?.addEventListener('click', () => { state.modal = 'createMeeting'; render(); });
+  }
+  // calendar nav + day click
+  document.querySelectorAll('[data-cal-nav]').forEach(b => {
+    b.addEventListener('click', () => {
+      const delta = parseInt(b.dataset.calNav);
+      state.calendarMonth = new Date(state.calendarMonth.getFullYear(), state.calendarMonth.getMonth() + delta, 1);
+      render();
+    });
+  });
+  document.querySelectorAll('[data-meeting-id]').forEach(el => {
+    el.addEventListener('click', () => openMeeting(el.dataset.meetingId));
+  });
+};
+
+const renderMonthView = () => {
+  const month = state.calendarMonth;
+  const y = month.getFullYear(), m = month.getMonth();
+  const firstDay = new Date(y, m, 1);
+  const startDow = firstDay.getDay();
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const daysInPrevMonth = new Date(y, m, 0).getDate();
+  const today = new Date();
+
+  // Build cells: 6 rows × 7 cols = 42
+  const cells = [];
+  for (let i = 0; i < startDow; i++) {
+    cells.push({ day: daysInPrevMonth - startDow + i + 1, otherMonth: true, date: new Date(y, m - 1, daysInPrevMonth - startDow + i + 1) });
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push({ day: d, otherMonth: false, date: new Date(y, m, d) });
+  }
+  while (cells.length < 42) {
+    const i = cells.length - startDow - daysInMonth + 1;
+    cells.push({ day: i, otherMonth: true, date: new Date(y, m + 1, i) });
+  }
+
+  // Map meetings to dates
+  const meetingsByDay = {};
+  state.meetings.forEach(mtg => {
+    const d = mtg.meetingDate.toDate ? mtg.meetingDate.toDate() : new Date(mtg.meetingDate);
+    const k = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    if (!meetingsByDay[k]) meetingsByDay[k] = [];
+    meetingsByDay[k].push(mtg);
+  });
+
+  const dows = ['일', '월', '화', '수', '목', '금', '토'];
+
+  // Upcoming meetings for this month (small list under calendar)
+  const monthMeetings = state.meetings.filter(mtg => {
+    const d = mtg.meetingDate.toDate ? mtg.meetingDate.toDate() : new Date(mtg.meetingDate);
+    return d.getFullYear() === y && d.getMonth() === m;
+  }).sort((a, b) => {
+    const ad = a.meetingDate.toDate(), bd = b.meetingDate.toDate();
+    return ad - bd;
+  });
+
+  return `
+    <div class="calendar-nav">
+      <button class="icon-btn" data-cal-nav="-1">${iconArrowLeft}</button>
+      <div class="calendar-month-label serif">${fmtMonth(month)}</div>
+      <button class="icon-btn" data-cal-nav="1">${iconArrowRight}</button>
+    </div>
+    <div class="calendar-grid">
+      ${dows.map(d => `<div class="cal-dow">${d}</div>`).join('')}
+      ${cells.map(c => {
+        const k = `${c.date.getFullYear()}-${c.date.getMonth()}-${c.date.getDate()}`;
+        const hasMeeting = meetingsByDay[k]?.length > 0;
+        const isToday = sameDay(c.date, today);
+        const cls = ['cal-day'];
+        if (c.otherMonth) cls.push('other-month');
+        if (isToday) cls.push('today');
+        if (hasMeeting) cls.push('has-meeting');
+        const firstMeetingId = hasMeeting ? meetingsByDay[k][0].id : '';
+        return `<div class="${cls.join(' ')}"${hasMeeting ? ` data-meeting-id="${firstMeetingId}"` : ''}>
+          <span>${c.day}</span>
+          ${hasMeeting ? '<div class="cal-dot"></div>' : ''}
+        </div>`;
+      }).join('')}
+    </div>
+    ${monthMeetings.length > 0 ? `
+      <div style="margin-top:20px;">
+        <div class="detail-section-title">이번 달 회차</div>
+        ${monthMeetings.map(renderMeetingCard).join('')}
+      </div>
+    ` : `<div class="empty" style="padding:24px 12px;">이번 달엔 예정된 회차가 없어요</div>`}
+  `;
+};
+
+const renderListView = () => {
+  if (state.meetings.length === 0) {
+    return `<div class="empty"><span class="serif">아직 회차가 없어요</span><div>모임장이 첫 회차를 등록하면 여기에 표시돼요.</div></div>`;
+  }
+  return state.meetings.map(renderMeetingCard).join('');
+};
+
+const renderMeetingCard = (mtg) => {
+  const isPast = isPastMeeting(mtg.meetingDate);
+  const myRSVP = mtg.rsvp?.[state.user.uid];
+  const attendedCount = mtg.attendees?.length || 0;
+  const rsvpYesCount = Object.values(mtg.rsvp || {}).filter(v => v === 'yes').length;
+  return `
+    <button class="meeting-card ${isPast ? 'past' : ''}" data-meeting-id="${mtg.id}">
+      <div class="meeting-date-row">
+        <span class="meeting-date">${fmtDateShort(mtg.meetingDate)} · ${fmtTime(mtg.meetingDate)}</span>
+        <span class="meeting-status">${isPast ? `참석 ${attendedCount}명` : `예정 ${rsvpYesCount}명`}</span>
+      </div>
+      <div class="meeting-title">${escapeHtml(mtg.bookTitle || '(책 미정)')}</div>
+      <div class="meeting-meta">
+        ${mtg.location ? `<span>📍 ${escapeHtml(mtg.location)}</span>` : ''}
+        ${myRSVP ? `<span style="color:var(--accent)">내 RSVP: ${({yes:'참석', maybe:'미정', no:'불참'})[myRSVP]}</span>` : (!isPast ? `<span style="color:var(--ink-mute)">RSVP 필요</span>` : '')}
+      </div>
+    </button>
+  `;
+};
+
+// ============================================================
+// 9) MEETING DETAIL
+// ============================================================
+const openMeeting = (meetingId) => {
+  state.currentMeetingId = meetingId;
+  listenToMeetingSubdata(state.currentClubId, meetingId);
+  render();
+};
+const closeMeeting = () => {
+  state.currentMeetingId = null;
+  if (commentsUnsub) { commentsUnsub(); commentsUnsub = null; }
+  if (reflectionsUnsub) { reflectionsUnsub(); reflectionsUnsub = null; }
+  render();
+};
+
+const renderMeetingDetail = () => {
+  const mtg = state.meetings.find(m => m.id === state.currentMeetingId);
+  if (!mtg) {
+    closeMeeting();
+    return;
+  }
+  const isHost = state.currentClub.hostId === state.user.uid;
+  const isPast = isPastMeeting(mtg.meetingDate);
+  const locked = isPastEditLock(mtg.meetingDate);
+  const myRSVP = mtg.rsvp?.[state.user.uid];
+  const myReflection = state.meetingReflections.find(r => r.authorId === state.user.uid);
+
+  // Build member info maps for display
+  const memberInfo = state.currentClub.memberInfo || {};
+  const memberIds = state.currentClub.memberIds || [];
+
+  $app.innerHTML = `
+    <div class="header">
+      <div class="header-left">
+        <button class="icon-btn" id="back-meeting">${iconArrowLeft}</button>
+        <div class="header-title" style="font-size:16px;">회차 상세</div>
+      </div>
+      ${isHost && !locked ? `<button class="btn-text" id="delete-meeting-btn" style="color:var(--danger)">삭제</button>` : ''}
+    </div>
+    <div class="screen">
+      <div class="meeting-detail-header">
+        <div class="detail-meta-row">
+          <div class="detail-date">${fmtDateShort(mtg.meetingDate)} · ${fmtTime(mtg.meetingDate)}</div>
+          ${isPast ? '<span class="meeting-status" style="background:var(--line); color:var(--ink-soft);">완료</span>' : '<span class="meeting-status">예정</span>'}
+        </div>
+        ${mtg.location ? `<div class="detail-location">📍 ${escapeHtml(mtg.location)}</div>` : ''}
+        <h1 class="detail-book-title">${escapeHtml(mtg.bookTitle || '(책 미정)')}</h1>
+        ${mtg.bookDescription ? `<div class="detail-book-desc">${linkify(mtg.bookDescription)}</div>` : ''}
+        ${mtg.bookLink ? `<a class="detail-book-link" href="${escapeHtml(mtg.bookLink)}" target="_blank" rel="noopener">책 정보 보기 →</a>` : ''}
+      </div>
+
+      ${locked ? `<div class="locked-notice">모임 후 ${EDIT_LOCK_DAYS}일이 지나 출석·RSVP 변경이 잠겼어요</div>` : ''}
+
+      ${!isPast ? `
+        <div class="detail-section">
+          <div class="detail-section-title">내 RSVP</div>
+          <div class="rsvp-self">
+            <button class="${myRSVP === 'yes' ? 'active yes' : ''}" data-rsvp="yes" ${locked?'disabled':''}>참석</button>
+            <button class="${myRSVP === 'maybe' ? 'active maybe' : ''}" data-rsvp="maybe" ${locked?'disabled':''}>미정</button>
+            <button class="${myRSVP === 'no' ? 'active no' : ''}" data-rsvp="no" ${locked?'disabled':''}>불참</button>
+          </div>
+          <div class="detail-section-title" style="margin-top:16px;">참석 현황 (${Object.values(mtg.rsvp || {}).filter(v=>v==='yes').length}/${memberIds.length})</div>
+          <div class="rsvp-list">
+            ${memberIds.map(uid => {
+              const info = memberInfo[uid] || {};
+              const r = mtg.rsvp?.[uid];
+              return `
+                <div class="rsvp-row">
+                  <div class="avatar">${info.photo ? `<img src="${info.photo}" alt="">` : `<div style="background:var(--bg-soft); width:100%; height:100%; display:grid; place-items:center; font-size:11px; color:var(--ink-mute);">${(info.name||'?')[0]}</div>`}</div>
+                  <div class="rsvp-name">${escapeHtml(info.name || '(이름없음)')}${uid === state.currentClub.hostId ? ' <span style="font-size:10px; color:var(--accent);">·모임장</span>' : ''}</div>
+                  <div class="rsvp-status ${r||''}">${r ? ({yes:'참석', maybe:'미정', no:'불참'})[r] : '미응답'}</div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      ` : ''}
+
+      ${isPast ? `
+        <div class="detail-section">
+          <div class="detail-section-title">
+            <span>실제 출석자 (${mtg.attendees?.length || 0}/${memberIds.length})</span>
+            ${isHost && !locked ? '<span style="color:var(--ink-mute); font-weight:400; text-transform:none; letter-spacing:0;">모임장이 체크</span>' : ''}
+          </div>
+          ${memberIds.map(uid => {
+            const info = memberInfo[uid] || {};
+            const checked = mtg.attendees?.includes(uid);
+            return `
+              <div class="attendance-check">
+                <input type="checkbox" id="att-${uid}" ${checked?'checked':''} ${(!isHost || locked)?'disabled':''} data-attend-uid="${uid}" data-attend-current="${checked?1:0}">
+                <label for="att-${uid}">${escapeHtml(info.name || '(이름없음)')}${uid === state.currentClub.hostId ? ' · 모임장' : ''}</label>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      ` : ''}
+
+      ${isPast ? `
+        <div class="detail-section">
+          <div class="detail-section-title">모임 소감</div>
+          ${state.meetingReflections.length > 0 ? state.meetingReflections.map(r => `
+            <div class="reflection">
+              <div class="reflection-author">${escapeHtml(r.authorName || '?')}</div>
+              <div class="reflection-body">${linkify(r.text)}</div>
+            </div>
+          `).join('') : '<div class="empty" style="padding:16px;">아직 소감이 없어요</div>'}
+          ${!locked ? `
+            <div style="margin-top:12px;">
+              <div class="detail-section-title">내 소감 ${myReflection ? '(수정 가능)' : ''}</div>
+              <textarea id="reflection-input" placeholder="이번 회차에서 느낀 점이나 인상 깊었던 부분을 짧게 남겨보세요" style="width:100%; padding:12px 14px; border:1px solid var(--line); background:var(--bg-card); border-radius:10px; min-height:80px; font-size:14px; resize:vertical;">${escapeHtml(myReflection?.text || '')}</textarea>
+              <div style="margin-top:8px; text-align:right;">
+                <button class="btn-primary" id="save-reflection-btn">${myReflection ? '소감 수정' : '소감 저장'}</button>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      ` : ''}
+
+      <div class="detail-section">
+        <div class="detail-section-title">댓글 (${state.meetingComments.length})</div>
+        ${state.meetingComments.length === 0 ? '<div class="empty" style="padding:16px;">아직 댓글이 없어요. 첫 댓글을 남겨보세요.</div>' : state.meetingComments.map(c => `
+          <div class="comment">
+            <div class="comment-head">
+              <span class="comment-author">${escapeHtml(c.authorName || '?')}</span>
+              <span>
+                ${c.createdAt ? new Date(c.createdAt.toDate()).toLocaleString('ko-KR', {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : ''}
+                ${(c.authorId === state.user.uid || isHost) ? `<button class="btn-text" style="margin-left:8px; color:var(--danger);" data-delete-comment="${c.id}">삭제</button>` : ''}
+              </span>
+            </div>
+            <div class="comment-body">${linkify(c.text)}</div>
+          </div>
+        `).join('')}
+        <div class="comment-form">
+          <textarea id="comment-input" placeholder="댓글을 남기세요" rows="1"></textarea>
+          <button class="btn-primary" id="send-comment-btn">전송</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('back-meeting').addEventListener('click', closeMeeting);
+  document.getElementById('delete-meeting-btn')?.addEventListener('click', () => deleteMeeting(state.currentClubId, mtg.id));
+
+  document.querySelectorAll('[data-rsvp]').forEach(b => {
+    b.addEventListener('click', () => updateRSVP(state.currentClubId, mtg.id, b.dataset.rsvp));
+  });
+
+  document.querySelectorAll('[data-attend-uid]').forEach(cb => {
+    cb.addEventListener('change', () => toggleAttendance(state.currentClubId, mtg.id, cb.dataset.attendUid, cb.dataset.attendCurrent === '1'));
+  });
+
+  document.querySelectorAll('[data-delete-comment]').forEach(b => {
+    b.addEventListener('click', (e) => { e.stopPropagation(); deleteComment(state.currentClubId, mtg.id, b.dataset.deleteComment); });
+  });
+
+  document.getElementById('send-comment-btn')?.addEventListener('click', async () => {
+    const ta = document.getElementById('comment-input');
+    if (!ta.value.trim()) return;
+    await addComment(state.currentClubId, mtg.id, ta.value);
+    ta.value = '';
+  });
+
+  document.getElementById('save-reflection-btn')?.addEventListener('click', async () => {
+    const ta = document.getElementById('reflection-input');
+    await saveReflection(state.currentClubId, mtg.id, ta.value);
+  });
+};
+
+// ============================================================
+// 10) MODALS
+// ============================================================
+const renderModal = () => {
+  // remove any existing modal
+  document.querySelector('.modal-backdrop')?.remove();
+  if (!state.modal) return;
+
+  const closeModal = () => { state.modal = null; render(); };
+
+  let content = '';
+  if (state.modal === 'createClub') {
+    content = `
+      <div class="modal-title serif">새 모임 만들기</div>
+      <div class="modal-sub">내가 모임장이 되는 새 책모임을 만들어요.</div>
+      <div class="form-field">
+        <label>모임 이름</label>
+        <input id="club-name" placeholder="예: 화요일 밤 독서모임" maxlength="30">
+      </div>
+      <div class="form-field">
+        <label>소개 (선택)</label>
+        <textarea id="club-desc" placeholder="모임 성격, 진행 방식 등" maxlength="200"></textarea>
+      </div>
+      <button class="btn-primary" id="create-club-submit" style="width:100%; padding:12px;">모임 만들기</button>
+    `;
+  } else if (state.modal === 'joinClub') {
+    content = `
+      <div class="modal-title serif">초대 코드로 가입</div>
+      <div class="modal-sub">모임장에게 받은 6자리 코드를 입력하세요.</div>
+      <div class="form-field">
+        <label>초대 코드</label>
+        <input id="join-code" placeholder="ABC123" maxlength="6" style="text-transform:uppercase; letter-spacing:0.15em; font-family:'Fraunces',serif; font-size:18px;">
+      </div>
+      <button class="btn-primary" id="join-club-submit" style="width:100%; padding:12px;">가입 신청</button>
+    `;
+  } else if (state.modal === 'createMeeting') {
+    const now = new Date();
+    now.setMinutes(0);
+    now.setHours(now.getHours() + 1);
+    const defaultDate = now.toISOString().slice(0, 10);
+    const defaultTime = '19:00';
+    content = `
+      <div class="modal-title serif">새 회차 만들기</div>
+      <div class="modal-sub">${escapeHtml(state.currentClub.name)}</div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>모임 날짜</label>
+          <input type="date" id="m-date" value="${defaultDate}">
+        </div>
+        <div class="form-field">
+          <label>시간</label>
+          <input type="time" id="m-time" value="${defaultTime}">
+        </div>
+      </div>
+      <div class="form-field">
+        <label>장소</label>
+        <input id="m-location" placeholder="예: 신촌 카페 OO / 줌">
+      </div>
+      <div class="form-field">
+        <label>책 제목</label>
+        <input id="m-book-title" placeholder="예: 구의 증명 (최진영)">
+      </div>
+      <div class="form-field">
+        <label>책 소개 (선택)</label>
+        <textarea id="m-book-desc" placeholder="간단한 소개나 발제 방향" rows="3"></textarea>
+      </div>
+      <div class="form-field">
+        <label>책 정보 링크 (선택)</label>
+        <input id="m-book-link" placeholder="https://...">
+      </div>
+      <button class="btn-primary" id="create-meeting-submit" style="width:100%; padding:12px;">회차 생성</button>
+    `;
+  } else if (state.modal === 'invite') {
+    content = `
+      <div class="modal-title serif">초대 코드</div>
+      <div class="modal-sub">이 코드를 새 멤버에게 공유하세요. 가입 신청이 오면 승인이 필요해요.</div>
+      <div class="invite-code-box">
+        <div class="label">초대 코드</div>
+        <div class="code">${state.currentClub.inviteCode}</div>
+      </div>
+      <button class="btn-secondary" id="copy-code" style="width:100%; padding:12px;">코드 복사</button>
+    `;
+  } else if (state.modal === 'pending') {
+    const pIds = state.currentClub.pendingIds || [];
+    const pInfo = state.currentClub.pendingInfo || {};
+    content = `
+      <div class="modal-title serif">승인 대기 (${pIds.length})</div>
+      <div class="modal-sub">새 가입 신청을 검토하세요.</div>
+      ${pIds.length === 0 ? '<div class="empty">대기 중인 신청이 없어요</div>' : pIds.map(uid => {
+        const info = pInfo[uid] || {};
+        return `
+          <div class="pending-item">
+            <div class="avatar">${info.photo ? `<img src="${info.photo}" alt="">` : `<div style="background:var(--bg-soft); width:100%; height:100%; display:grid; place-items:center; font-size:11px; color:var(--ink-mute);">${(info.name||'?')[0]}</div>`}</div>
+            <div class="name">${escapeHtml(info.name || '(이름없음)')}</div>
+            <button class="pending-reject" data-reject="${uid}">거절</button>
+            <button class="pending-approve" data-approve="${uid}">승인</button>
+          </div>
+        `;
+      }).join('')}
+    `;
+  }
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.innerHTML = `<div class="modal" style="position:relative;">
+    <button class="modal-close">${iconX}</button>
+    ${content}
+  </div>`;
+  document.body.appendChild(backdrop);
+
+  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeModal(); });
+  backdrop.querySelector('.modal-close').addEventListener('click', closeModal);
+
+  if (state.modal === 'createClub') {
+    document.getElementById('create-club-submit').addEventListener('click', async () => {
+      const name = document.getElementById('club-name').value.trim();
+      if (!name) { toast('모임 이름을 입력하세요'); return; }
+      const desc = document.getElementById('club-desc').value.trim();
+      await createClub(name, desc);
+      closeModal();
+    });
+  } else if (state.modal === 'joinClub') {
+    document.getElementById('join-club-submit').addEventListener('click', async () => {
+      const code = document.getElementById('join-code').value;
+      if (!code.trim()) { toast('코드를 입력하세요'); return; }
+      await joinClubByCode(code);
+      closeModal();
+    });
+  } else if (state.modal === 'createMeeting') {
+    document.getElementById('create-meeting-submit').addEventListener('click', async () => {
+      const date = document.getElementById('m-date').value;
+      const time = document.getElementById('m-time').value;
+      const bookTitle = document.getElementById('m-book-title').value.trim();
+      if (!date || !time) { toast('날짜·시간을 입력하세요'); return; }
+      if (!bookTitle) { toast('책 제목을 입력하세요'); return; }
+      const dt = new Date(`${date}T${time}`);
+      await createMeeting(state.currentClubId, {
+        meetingDate: dt,
+        location: document.getElementById('m-location').value.trim(),
+        bookTitle,
+        bookDescription: document.getElementById('m-book-desc').value.trim(),
+        bookLink: document.getElementById('m-book-link').value.trim()
+      });
+      closeModal();
+    });
+  } else if (state.modal === 'invite') {
+    document.getElementById('copy-code').addEventListener('click', () => {
+      navigator.clipboard.writeText(state.currentClub.inviteCode);
+      toast('복사됨');
+    });
+  } else if (state.modal === 'pending') {
+    document.querySelectorAll('[data-approve]').forEach(b => {
+      b.addEventListener('click', async () => { await approvePending(state.currentClubId, b.dataset.approve); });
+    });
+    document.querySelectorAll('[data-reject]').forEach(b => {
+      b.addEventListener('click', async () => { await rejectPending(state.currentClubId, b.dataset.reject); });
+    });
+  }
+};
+
+// Initial render
+render();
+</script>
+</body>
+</html>
