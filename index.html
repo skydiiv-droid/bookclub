@@ -267,6 +267,56 @@ a:hover { text-decoration: underline; }
 .danger-zone { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line-soft); }
 .danger-btn { width: 100%; padding: 12px; border-radius: 10px; font-size: 13px; color: var(--danger); border: 1px solid var(--line); background: var(--bg-card); font-weight: 500; }
 .danger-btn:hover { border-color: var(--danger); }
+.detail-book-author { font-size: 13px; color: var(--ink-mute); margin: -6px 0 12px; }
+.detail-book-count { font-size: 12px; color: var(--accent); font-weight: 600; letter-spacing: 0.04em; margin-bottom: 12px; }
+.book-list { display: flex; flex-direction: column; gap: 10px; }
+.book-item { display: flex; gap: 12px; padding: 12px; background: var(--bg-card); border: 1px solid var(--line-soft); border-radius: 12px; }
+.book-thumb { width: 48px; height: 68px; object-fit: cover; border-radius: 6px; flex-shrink: 0; background: var(--bg-soft); }
+.book-thumb-empty { display: grid; place-items: center; font-size: 22px; }
+.book-item-info { flex: 1; min-width: 0; }
+.book-item-title { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 500; line-height: 1.25; margin-bottom: 3px; }
+.book-item-author { font-size: 12px; color: var(--ink-mute); margin-bottom: 4px; }
+.book-item-desc { font-size: 12px; color: var(--ink-soft); line-height: 1.4; }
+.book-item-link { font-size: 12px; color: var(--accent); display: inline-block; margin-top: 4px; }
+/* book editor inside modal */
+.book-editor-empty { font-size: 12px; color: var(--ink-mute); padding: 10px 12px; background: var(--bg-soft); border-radius: 8px; }
+.book-chip { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--bg-card); border: 1px solid var(--line-soft); border-radius: 10px; margin-bottom: 6px; }
+.book-chip-thumb { width: 32px; height: 44px; object-fit: cover; border-radius: 4px; flex-shrink: 0; background: var(--bg-soft); }
+.book-chip-info { flex: 1; min-width: 0; }
+.book-chip-title { font-size: 13px; font-weight: 500; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.book-chip-author { font-size: 11px; color: var(--ink-mute); }
+.book-chip-remove { width: 24px; height: 24px; border-radius: 999px; background: var(--bg-soft); color: var(--ink-mute); font-size: 12px; flex-shrink: 0; }
+.book-chip-remove:hover { background: var(--danger); color: white; }
+.book-search-wrap { margin-top: 8px; }
+#book-search { width: 100%; padding: 10px 12px; border: 1px solid var(--line); background: var(--bg-card); border-radius: 10px; font-size: 14px; }
+#book-search:focus { outline: none; border-color: var(--accent); }
+.book-search-loading { font-size: 12px; color: var(--ink-mute); padding: 10px; text-align: center; }
+#book-search-results { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; max-height: 280px; overflow-y: auto; }
+.book-result { display: flex; gap: 10px; align-items: center; padding: 8px; background: var(--bg-card); border: 1px solid var(--line-soft); border-radius: 8px; text-align: left; transition: border-color 0.15s ease; }
+.book-result:hover { border-color: var(--accent); }
+.book-result-thumb { width: 30px; height: 42px; object-fit: cover; border-radius: 4px; flex-shrink: 0; background: var(--bg-soft); }
+.book-result-info { flex: 1; min-width: 0; }
+.book-result-title { font-size: 13px; font-weight: 500; line-height: 1.2; }
+.book-result-author { font-size: 11px; color: var(--ink-mute); }
+.book-manual-btn { margin-top: 8px; font-size: 12px; color: var(--accent); font-weight: 500; }
+.stats-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+.stat-box { background: var(--bg-card); border: 1px solid var(--line-soft); border-radius: 12px; padding: 16px 8px; text-align: center; }
+.stat-num { font-size: 28px; color: var(--accent); line-height: 1; margin-bottom: 6px; }
+.stat-label { font-size: 11px; color: var(--ink-mute); }
+.rank-list { display: flex; flex-direction: column; gap: 8px; }
+.rank-row { display: flex; align-items: center; gap: 10px; }
+.rank-num { width: 20px; font-family: 'Fraunces', serif; font-size: 14px; color: var(--ink-mute); text-align: center; flex-shrink: 0; }
+.rank-name { width: 80px; font-size: 13px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-bar-wrap { flex: 1; height: 8px; background: var(--bg-soft); border-radius: 999px; overflow: hidden; }
+.rank-bar { height: 100%; background: var(--accent-light); border-radius: 999px; transition: width 0.4s ease; }
+.rank-count { font-size: 12px; color: var(--ink-soft); width: 32px; text-align: right; flex-shrink: 0; }
+.stats-book-list { display: flex; flex-direction: column; gap: 8px; }
+.stats-book { display: flex; gap: 10px; align-items: center; padding: 8px; background: var(--bg-card); border: 1px solid var(--line-soft); border-radius: 10px; }
+.stats-book-thumb { width: 36px; height: 50px; object-fit: cover; border-radius: 4px; flex-shrink: 0; background: var(--bg-soft); }
+.stats-book-info { flex: 1; min-width: 0; }
+.stats-book-title { font-size: 14px; font-weight: 500; line-height: 1.25; }
+.stats-book-author { font-size: 11px; color: var(--ink-mute); }
+.stats-book-date { font-size: 11px; color: var(--accent); margin-top: 2px; font-style: italic; }
 
 /* Section block */
 .detail-section { margin-bottom: 32px; }
@@ -480,12 +530,12 @@ import {
 // 1) FIREBASE CONFIG — replace with your own
 // ============================================================
 const firebaseConfig = {
-  apiKey: "AIzaSyA8d-HUgdShkvh8-9p6ZO93nRHXY7dpbBo",
-  authDomain: "bookclub-6b198.firebaseapp.com",
-  projectId: "bookclub-6b198",
-  storageBucket: "bookclub-6b198.firebasestorage.app",
-  messagingSenderId: "941341633308",
-  appId: "1:941341633308:web:c489266e57f3385c94e8d9"
+  apiKey: “AIzaSyA8d-HUgdShkvh8-9p6ZO93nRHXY7dpbBo”,
+authDomain: “bookclub-6b198.firebaseapp.com”,
+projectId: “bookclub-6b198”,
+storageBucket: “bookclub-6b198.firebasestorage.app”,
+messagingSenderId: “941341633308”,
+appId: “1:941341633308:web:c489266e57f3385c94e8d9”
 };
 
 const app = initializeApp(firebaseConfig);
@@ -777,10 +827,8 @@ const createMeeting = async (clubId, data) => {
   await addDoc(collection(db, 'clubs', clubId, 'meetings'), {
     meetingDate: Timestamp.fromDate(data.meetingDate),
     location: data.location || '',
-    bookTitle: data.bookTitle,
-    bookDescription: data.bookDescription || '',
-    bookLink: data.bookLink || '',
-    extraInfo: data.extraInfo || '',     // 회비·준비물 등 추가 정보
+    books: data.books || [],            // [{title, author, description, link, thumbnail}]
+    extraInfo: data.extraInfo || '',
     rsvp: {},
     attendees: [],
     createdAt: serverTimestamp(),
@@ -793,13 +841,52 @@ const updateMeeting = async (clubId, meetingId, data) => {
   await updateDoc(doc(db, 'clubs', clubId, 'meetings', meetingId), {
     meetingDate: Timestamp.fromDate(data.meetingDate),
     location: data.location || '',
-    bookTitle: data.bookTitle,
-    bookDescription: data.bookDescription || '',
-    bookLink: data.bookLink || '',
+    books: data.books || [],
     extraInfo: data.extraInfo || '',
     updatedAt: serverTimestamp()
   });
   toast('회차가 수정됐어요');
+};
+
+// 기존 단권 데이터(bookTitle/bookDescription/bookLink)를 books 배열로 정규화
+const getBooks = (mtg) => {
+  if (Array.isArray(mtg.books) && mtg.books.length > 0) return mtg.books;
+  if (mtg.bookTitle) {
+    return [{ title: mtg.bookTitle, author: '', description: mtg.bookDescription || '', link: mtg.bookLink || '', thumbnail: '' }];
+  }
+  return [];
+};
+const firstBookTitle = (mtg) => {
+  const b = getBooks(mtg);
+  if (b.length === 0) return '(책 미정)';
+  return b.length === 1 ? b[0].title : `${b[0].title} 외 ${b.length - 1}권`;
+};
+
+// ============================================================
+// Google Books 검색 (CORS 허용, 키 없이 호출 가능)
+// ============================================================
+const searchGoogleBooks = async (queryStr) => {
+  if (!queryStr || queryStr.trim().length < 2) return [];
+  const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(queryStr.trim())}&maxResults=6&langRestrict=ko&country=KR`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (!data.items) return [];
+    return data.items.map(it => {
+      const v = it.volumeInfo || {};
+      return {
+        title: v.title || '',
+        author: (v.authors || []).join(', '),
+        description: v.description ? v.description.slice(0, 300) : '',
+        link: v.infoLink || v.canonicalVolumeLink || '',
+        thumbnail: (v.imageLinks?.thumbnail || v.imageLinks?.smallThumbnail || '').replace('http://', 'https://')
+      };
+    }).filter(b => b.title);
+  } catch (e) {
+    console.error('Google Books error', e);
+    return [];
+  }
 };
 
 const updateRSVP = async (clubId, meetingId, status) => {
@@ -838,6 +925,8 @@ const deleteMeeting = async (clubId, meetingId) => {
 // 7) DATA: COMMENTS + REFLECTIONS
 // ============================================================
 let commentsUnsub = null;
+let editingBooks = [];   // 회차 생성/수정 중인 도서 목록
+let bookSearchTimer = null;
 let reflectionsUnsub = null;
 
 const listenToMeetingSubdata = (clubId, meetingId) => {
@@ -1041,11 +1130,13 @@ const renderClub = () => {
 
       ${state.calendarMode === 'month' ? renderMonthView() : renderListView()}
 
-      ${isHost ? `<button class="action-btn" id="create-meeting-btn" style="margin-top:16px;">${iconPlus} 새 회차 만들기</button>` : ''}
+      <button class="action-btn" id="stats-btn" style="margin-top:16px;">📊 모임 통계</button>
+      ${isHost ? `<button class="action-btn" id="create-meeting-btn" style="margin-top:10px;">${iconPlus} 새 회차 만들기</button>` : ''}
     </div>
   `;
   document.getElementById('back-btn').addEventListener('click', backToClubList);
   document.getElementById('members-btn')?.addEventListener('click', () => { state.modal = 'members'; render(); });
+  document.getElementById('stats-btn')?.addEventListener('click', () => { state.modal = 'stats'; render(); });
   document.querySelectorAll('.view-toggle button').forEach(b => {
     b.addEventListener('click', () => { state.calendarMode = b.dataset.mode; render(); });
   });
@@ -1159,10 +1250,10 @@ const renderMeetingCard = (mtg) => {
         <span class="meeting-date">${fmtDateShort(mtg.meetingDate)} · ${fmtTime(mtg.meetingDate)}</span>
         <span class="meeting-status">${isPast ? `참석 ${attendedCount}명` : `예정 ${rsvpYesCount}명`}</span>
       </div>
-      <div class="meeting-title">${escapeHtml(mtg.bookTitle || '(책 미정)')}</div>
+      <div class="meeting-title">${escapeHtml(firstBookTitle(mtg))}</div>
       <div class="meeting-meta">
         ${mtg.location ? `<span>📍 ${escapeHtml(mtg.location)}</span>` : ''}
-        ${myRSVP ? `<span style="color:var(--accent)">내 RSVP: ${({yes:'참석', maybe:'미정', no:'불참'})[myRSVP]}</span>` : (!isPast ? `<span style="color:var(--ink-mute)">RSVP 필요</span>` : '')}
+        ${myRSVP ? `<span style="color:var(--accent)">내 응답: ${({yes:'참석', maybe:'미정', no:'불참'})[myRSVP]}</span>` : (!isPast ? `<span style="color:var(--ink-mute)">참석 여부 미응답</span>` : '')}
       </div>
     </button>
   `;
@@ -1218,17 +1309,44 @@ const renderMeetingDetail = () => {
           ${isPast ? '<span class="meeting-status" style="background:var(--line); color:var(--ink-soft);">완료</span>' : '<span class="meeting-status">예정</span>'}
         </div>
         ${mtg.location ? `<div class="detail-location">📍 ${escapeHtml(mtg.location)}</div>` : ''}
-        <h1 class="detail-book-title">${escapeHtml(mtg.bookTitle || '(책 미정)')}</h1>
-        ${mtg.bookDescription ? `<div class="detail-book-desc">${linkify(mtg.bookDescription)}</div>` : ''}
-        ${mtg.bookLink ? `<a class="detail-book-link" href="${escapeHtml(mtg.bookLink)}" target="_blank" rel="noopener">책 정보 보기 →</a>` : ''}
+        ${(() => {
+          const books = getBooks(mtg);
+          if (books.length === 0) return `<h1 class="detail-book-title">(책 미정)</h1>`;
+          if (books.length === 1) {
+            const b = books[0];
+            return `
+              <h1 class="detail-book-title">${escapeHtml(b.title)}</h1>
+              ${b.author ? `<div class="detail-book-author">${escapeHtml(b.author)}</div>` : ''}
+              ${b.description ? `<div class="detail-book-desc">${linkify(b.description)}</div>` : ''}
+              ${b.link ? `<a class="detail-book-link" href="${escapeHtml(b.link)}" target="_blank" rel="noopener">책 정보 보기 →</a>` : ''}
+            `;
+          }
+          // 여러 권
+          return `
+            <div class="detail-book-count">이번 회차 도서 ${books.length}권</div>
+            <div class="book-list">
+              ${books.map(b => `
+                <div class="book-item">
+                  ${b.thumbnail ? `<img class="book-thumb" src="${escapeHtml(b.thumbnail)}" alt="">` : `<div class="book-thumb book-thumb-empty">📖</div>`}
+                  <div class="book-item-info">
+                    <div class="book-item-title">${escapeHtml(b.title)}</div>
+                    ${b.author ? `<div class="book-item-author">${escapeHtml(b.author)}</div>` : ''}
+                    ${b.description ? `<div class="book-item-desc">${escapeHtml(b.description.slice(0,80))}${b.description.length>80?'…':''}</div>` : ''}
+                    ${b.link ? `<a class="book-item-link" href="${escapeHtml(b.link)}" target="_blank" rel="noopener">정보 →</a>` : ''}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        })()}
         ${mtg.extraInfo ? `<div class="extra-info-box"><span class="extra-info-label">안내</span>${linkify(mtg.extraInfo)}</div>` : ''}
       </div>
 
-      ${locked ? `<div class="locked-notice">모임 후 ${EDIT_LOCK_DAYS}일이 지나 출석·RSVP 변경이 잠겼어요</div>` : ''}
+      ${locked ? `<div class="locked-notice">모임 후 ${EDIT_LOCK_DAYS}일이 지나 출석·참석 여부 변경이 잠겼어요</div>` : ''}
 
       ${!isPast ? `
         <div class="detail-section">
-          <div class="detail-section-title">내 RSVP</div>
+          <div class="detail-section-title">참석 여부 (내 응답)</div>
           <div class="rsvp-self">
             <button class="${myRSVP === 'yes' ? 'active yes' : ''}" data-rsvp="yes" ${locked?'disabled':''}>참석</button>
             <button class="${myRSVP === 'maybe' ? 'active maybe' : ''}" data-rsvp="maybe" ${locked?'disabled':''}>미정</button>
@@ -1368,11 +1486,15 @@ const renderMeetingDetail = () => {
 const shareMeeting = async (mtg) => {
   const date = fmtDateShort(mtg.meetingDate) + ' ' + fmtTime(mtg.meetingDate);
   const url = `${location.origin}${location.pathname}#/club/${state.currentClubId}/meeting/${mtg.id}`;
-  const lines = [
-    `📚 ${state.currentClub.name}`,
-    `📖 ${mtg.bookTitle || '(책 미정)'}`,
-    `🗓️ ${date}`,
-  ];
+  const books = getBooks(mtg);
+  const lines = [`📚 ${state.currentClub.name}`];
+  if (books.length === 0) lines.push(`📖 (책 미정)`);
+  else if (books.length === 1) lines.push(`📖 ${books[0].title}${books[0].author ? ' / ' + books[0].author : ''}`);
+  else {
+    lines.push(`📖 도서 ${books.length}권:`);
+    books.forEach(b => lines.push(`  · ${b.title}`));
+  }
+  lines.push(`🗓️ ${date}`);
   if (mtg.location) lines.push(`📍 ${mtg.location}`);
   if (mtg.extraInfo) lines.push(`ℹ️ ${mtg.extraInfo}`);
   lines.push('', url);
@@ -1393,6 +1515,128 @@ const shareMeeting = async (mtg) => {
   } catch (e) {
     toast('공유를 지원하지 않는 환경이에요');
   }
+};
+
+// ============================================================
+// 9c) BOOK EDITOR (multi-book + Google Books search)
+// ============================================================
+const renderBookEditor = () => {
+  const wrap = document.getElementById('book-editor');
+  if (!wrap) return;
+  if (editingBooks.length === 0) {
+    wrap.innerHTML = `<div class="book-editor-empty">아직 추가된 책이 없어요. 아래에서 검색하거나 직접 입력하세요.</div>`;
+    return;
+  }
+  wrap.innerHTML = editingBooks.map((b, i) => `
+    <div class="book-chip">
+      ${b.thumbnail ? `<img class="book-chip-thumb" src="${escapeHtml(b.thumbnail)}" alt="">` : `<div class="book-chip-thumb book-thumb-empty">📖</div>`}
+      <div class="book-chip-info">
+        <div class="book-chip-title">${escapeHtml(b.title)}</div>
+        ${b.author ? `<div class="book-chip-author">${escapeHtml(b.author)}</div>` : ''}
+      </div>
+      <button type="button" class="book-chip-remove" data-rmbook="${i}">✕</button>
+    </div>
+  `).join('');
+  wrap.querySelectorAll('[data-rmbook]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      editingBooks.splice(parseInt(btn.dataset.rmbook), 1);
+      renderBookEditor();
+    });
+  });
+};
+
+const wireBookSearch = () => {
+  const input = document.getElementById('book-search');
+  const results = document.getElementById('book-search-results');
+  if (!input || !results) return;
+
+  const doSearch = async () => {
+    const q = input.value.trim();
+    if (q.length < 2) { results.innerHTML = ''; return; }
+    results.innerHTML = `<div class="book-search-loading">검색 중…</div>`;
+    const books = await searchGoogleBooks(q);
+    if (books.length === 0) {
+      results.innerHTML = `<div class="book-search-loading">결과가 없어요. "직접 입력"을 눌러 수동으로 추가하세요.</div>`;
+      return;
+    }
+    results.innerHTML = books.map((b, i) => `
+      <button type="button" class="book-result" data-addidx="${i}">
+        ${b.thumbnail ? `<img class="book-result-thumb" src="${escapeHtml(b.thumbnail)}" alt="">` : `<div class="book-result-thumb book-thumb-empty">📖</div>`}
+        <div class="book-result-info">
+          <div class="book-result-title">${escapeHtml(b.title)}</div>
+          ${b.author ? `<div class="book-result-author">${escapeHtml(b.author)}</div>` : ''}
+        </div>
+      </button>
+    `).join('');
+    results.querySelectorAll('[data-addidx]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const b = books[parseInt(btn.dataset.addidx)];
+        editingBooks.push({...b});
+        input.value = '';
+        results.innerHTML = '';
+        renderBookEditor();
+      });
+    });
+  };
+
+  input.addEventListener('input', () => {
+    clearTimeout(bookSearchTimer);
+    bookSearchTimer = setTimeout(doSearch, 450); // debounce
+  });
+};
+
+const openManualBookEntry = () => {
+  const title = prompt('책 제목을 입력하세요');
+  if (!title || !title.trim()) return;
+  const author = prompt('저자 (선택, 비워도 됨)') || '';
+  editingBooks.push({ title: title.trim(), author: author.trim(), description: '', link: '', thumbnail: '' });
+  renderBookEditor();
+};
+
+// ============================================================
+// 9d) STATS
+// ============================================================
+const computeStats = () => {
+  const meetings = state.meetings || [];
+  const pastMeetings = meetings.filter(m => isPastMeeting(m.meetingDate));
+  const memberInfo = state.currentClub.memberInfo || {};
+  const memberIds = state.currentClub.memberIds || [];
+
+  // 참석 횟수 집계
+  const attendCount = {};
+  memberIds.forEach(uid => { attendCount[uid] = 0; });
+  pastMeetings.forEach(m => {
+    (m.attendees || []).forEach(uid => {
+      attendCount[uid] = (attendCount[uid] || 0) + 1;
+    });
+  });
+  const ranking = memberIds
+    .map(uid => ({ uid, name: memberInfo[uid]?.name || '(탈퇴)', count: attendCount[uid] || 0 }))
+    .sort((a, b) => b.count - a.count);
+
+  // 읽은 책 목록 (지난 회차)
+  const booksRead = [];
+  pastMeetings
+    .slice()
+    .sort((a, b) => (a.meetingDate.toDate ? a.meetingDate.toDate() : new Date(a.meetingDate)) - (b.meetingDate.toDate ? b.meetingDate.toDate() : new Date(b.meetingDate)))
+    .forEach(m => {
+      getBooks(m).forEach(b => booksRead.push({ ...b, date: m.meetingDate }));
+    });
+
+  // 올해 읽은 책 수
+  const thisYear = new Date().getFullYear();
+  const thisYearCount = booksRead.filter(b => {
+    const d = b.date.toDate ? b.date.toDate() : new Date(b.date);
+    return d.getFullYear() === thisYear;
+  }).length;
+
+  return {
+    totalMeetings: pastMeetings.length,
+    totalBooks: booksRead.length,
+    thisYearCount,
+    ranking,
+    booksRead: booksRead.reverse()  // 최신순
+  };
 };
 
 // ============================================================
@@ -1438,12 +1682,14 @@ const renderModal = () => {
       const d = mtg.meetingDate.toDate ? mtg.meetingDate.toDate() : new Date(mtg.meetingDate);
       defaultDate = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       defaultTime = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      editingBooks = getBooks(mtg).map(b => ({...b}));
     } else {
       const now = new Date();
       now.setMinutes(0);
       now.setHours(now.getHours() + 1);
       defaultDate = now.toISOString().slice(0, 10);
       defaultTime = '19:00';
+      editingBooks = [];
     }
     content = `
       <div class="modal-title serif">${editing ? '회차 수정' : '새 회차 만들기'}</div>
@@ -1463,16 +1709,13 @@ const renderModal = () => {
         <input id="m-location" placeholder="예: 신촌 카페 OO / 줌" value="${editing ? escapeHtml(mtg.location || '') : ''}">
       </div>
       <div class="form-field">
-        <label>책 제목</label>
-        <input id="m-book-title" placeholder="예: 구의 증명 (최진영)" value="${editing ? escapeHtml(mtg.bookTitle || '') : ''}">
-      </div>
-      <div class="form-field">
-        <label>책 소개 (선택)</label>
-        <textarea id="m-book-desc" placeholder="간단한 소개나 발제 방향" rows="3">${editing ? escapeHtml(mtg.bookDescription || '') : ''}</textarea>
-      </div>
-      <div class="form-field">
-        <label>책 정보 링크 (선택)</label>
-        <input id="m-book-link" placeholder="https://..." value="${editing ? escapeHtml(mtg.bookLink || '') : ''}">
+        <label>도서 <span style="color:var(--ink-mute); font-weight:400;">(여러 권 가능)</span></label>
+        <div id="book-editor"></div>
+        <div class="book-search-wrap">
+          <input id="book-search" placeholder="책 제목 검색 (예: 구의 증명)" autocomplete="off">
+          <div id="book-search-results"></div>
+          <button type="button" class="book-manual-btn" id="book-manual-btn">검색 없이 직접 입력</button>
+        </div>
       </div>
       <div class="form-field">
         <label>추가 정보 (선택)</label>
@@ -1503,6 +1746,48 @@ const renderModal = () => {
           ? `<button class="danger-btn" id="delete-club-btn">모임 삭제</button>`
           : `<button class="danger-btn" id="leave-club-btn">모임 탈퇴</button>`}
       </div>
+    `;
+  } else if (state.modal === 'stats') {
+    const s = computeStats();
+    const maxCount = s.ranking.length > 0 ? Math.max(1, s.ranking[0].count) : 1;
+    content = `
+      <div class="modal-title serif">모임 통계</div>
+      <div class="modal-sub">${escapeHtml(state.currentClub.name)}</div>
+      <div class="stats-summary">
+        <div class="stat-box"><div class="stat-num serif">${s.totalMeetings}</div><div class="stat-label">완료한 회차</div></div>
+        <div class="stat-box"><div class="stat-num serif">${s.totalBooks}</div><div class="stat-label">읽은 책</div></div>
+        <div class="stat-box"><div class="stat-num serif">${s.thisYearCount}</div><div class="stat-label">올해 읽은 책</div></div>
+      </div>
+
+      <div class="detail-section-title" style="margin-top:24px;">참석 랭킹</div>
+      ${s.ranking.length === 0 ? '<div class="empty" style="padding:16px;">아직 데이터가 없어요</div>' : `
+        <div class="rank-list">
+          ${s.ranking.map((r, i) => `
+            <div class="rank-row">
+              <div class="rank-num">${i + 1}</div>
+              <div class="rank-name">${escapeHtml(r.name)}${r.uid === state.user.uid ? ' <span style="color:var(--ink-mute); font-size:11px;">· 나</span>' : ''}</div>
+              <div class="rank-bar-wrap"><div class="rank-bar" style="width:${(r.count / maxCount) * 100}%"></div></div>
+              <div class="rank-count">${r.count}회</div>
+            </div>
+          `).join('')}
+        </div>
+      `}
+
+      <div class="detail-section-title" style="margin-top:24px;">읽은 책 (최신순)</div>
+      ${s.booksRead.length === 0 ? '<div class="empty" style="padding:16px;">아직 읽은 책이 없어요</div>' : `
+        <div class="stats-book-list">
+          ${s.booksRead.map(b => `
+            <div class="stats-book">
+              ${b.thumbnail ? `<img class="stats-book-thumb" src="${escapeHtml(b.thumbnail)}" alt="">` : `<div class="stats-book-thumb book-thumb-empty">📖</div>`}
+              <div class="stats-book-info">
+                <div class="stats-book-title">${escapeHtml(b.title)}</div>
+                ${b.author ? `<div class="stats-book-author">${escapeHtml(b.author)}</div>` : ''}
+                <div class="stats-book-date">${fmtDateShort(b.date)}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `}
     `;
   } else if (state.modal === 'invite') {
     content = `
@@ -1562,19 +1847,25 @@ const renderModal = () => {
     });
   } else if (state.modal === 'createMeeting' || state.modal === 'editMeeting') {
     const editing = state.modal === 'editMeeting';
+    renderBookEditor();
+    wireBookSearch();
+    document.getElementById('book-manual-btn')?.addEventListener('click', openManualBookEntry);
     document.getElementById('meeting-submit').addEventListener('click', async () => {
       const date = document.getElementById('m-date').value;
       const time = document.getElementById('m-time').value;
-      const bookTitle = document.getElementById('m-book-title').value.trim();
       if (!date || !time) { toast('날짜·시간을 입력하세요'); return; }
-      if (!bookTitle) { toast('책 제목을 입력하세요'); return; }
+      if (editingBooks.length === 0) { toast('책을 한 권 이상 추가하세요'); return; }
       const dt = new Date(`${date}T${time}`);
       const payload = {
         meetingDate: dt,
         location: document.getElementById('m-location').value.trim(),
-        bookTitle,
-        bookDescription: document.getElementById('m-book-desc').value.trim(),
-        bookLink: document.getElementById('m-book-link').value.trim(),
+        books: editingBooks.map(b => ({
+          title: b.title || '',
+          author: b.author || '',
+          description: b.description || '',
+          link: b.link || '',
+          thumbnail: b.thumbnail || ''
+        })),
         extraInfo: document.getElementById('m-extra').value.trim()
       };
       if (editing) {
