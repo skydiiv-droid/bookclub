@@ -79,6 +79,8 @@ a:hover { text-decoration: underline; }
 .login h1 { font-size: 40px; font-weight: 400; letter-spacing: -0.02em; }
 .login h1 em { font-style: italic; color: var(--accent); }
 .login p { color: var(--ink-soft); max-width: 280px; font-size: 14px; }
+.last-account { font-size: 12px !important; color: var(--ink-mute) !important; }
+.last-account strong { color: var(--ink-soft); font-weight: 600; }
 .google-btn {
   display: inline-flex; align-items: center; gap: 12px;
   padding: 14px 28px; background: var(--ink); color: #faf6ee;
@@ -299,6 +301,27 @@ a:hover { text-decoration: underline; }
 .book-result-title { font-size: 13px; font-weight: 500; line-height: 1.2; }
 .book-result-author { font-size: 11px; color: var(--ink-mute); }
 .book-manual-btn { margin-top: 8px; font-size: 12px; color: var(--accent); font-weight: 500; }
+.loc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.loc-chip { padding: 6px 12px; border-radius: 999px; font-size: 13px; background: var(--bg-soft); color: var(--ink-soft); border: 1px solid transparent; transition: all 0.15s ease; }
+.loc-chip:hover { border-color: var(--accent-light); }
+.loc-chip.active { background: var(--accent); color: white; }
+.link-chip { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--bg-card); border: 1px solid var(--line-soft); border-radius: 10px; margin-bottom: 6px; }
+.link-chip-info { flex: 1; min-width: 0; }
+.link-chip-label { font-size: 13px; font-weight: 500; }
+.link-chip-url { font-size: 11px; color: var(--ink-mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.related-links { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.related-link { display: inline-block; padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--line-soft); border-radius: 10px; font-size: 13px; color: var(--accent); }
+.related-link:hover { border-color: var(--accent); text-decoration: none; }
+.rec-books { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.rec-books-label { font-size: 11px; color: var(--accent); font-weight: 600; letter-spacing: 0.04em; margin-bottom: 6px; }
+.rec-book { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+.rec-book-thumb { width: 28px; height: 40px; object-fit: cover; border-radius: 3px; flex-shrink: 0; background: var(--bg-soft); font-size: 16px; }
+.rec-book-info { flex: 1; min-width: 0; }
+.rec-book-title { font-size: 13px; font-weight: 500; font-style: normal; font-family: 'Pretendard Variable', sans-serif; color: var(--ink); }
+.rec-book-author { font-size: 11px; color: var(--ink-mute); }
+.rec-book-link { color: var(--accent); font-size: 16px; padding: 0 6px; }
+.rec-editor-wrap { margin-top: 12px; padding: 12px; background: var(--bg-soft); border-radius: 10px; }
+.rec-editor-label { font-size: 12px; color: var(--ink-soft); font-weight: 500; margin-bottom: 8px; }
 .stats-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
 .stat-box { background: var(--bg-card); border: 1px solid var(--line-soft); border-radius: 12px; padding: 16px 8px; text-align: center; }
 .stat-num { font-size: 28px; color: var(--accent); line-height: 1; margin-bottom: 6px; }
@@ -624,15 +647,34 @@ const clearListeners = () => {
 // ============================================================
 // 4) AUTH
 // ============================================================
+const SESSION_MAX_MS = 24 * 60 * 60 * 1000;  // 24시간
+const LS_LOGIN_AT = 'bookclub_login_at';
+const LS_LAST_EMAIL = 'bookclub_last_email';
+
+const lsGet = (k) => { try { return localStorage.getItem(k); } catch(e) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch(e) {} };
+
 onAuthStateChanged(auth, async (user) => {
   if (user) {
+    // 24시간 경과 시 자동 로그아웃
+    const loginAt = parseInt(lsGet(LS_LOGIN_AT) || '0', 10);
+    if (loginAt && (Date.now() - loginAt > SESSION_MAX_MS)) {
+      lsSet(LS_LAST_EMAIL, user.email || '');
+      clearListeners();
+      await signOut(auth);
+      toast('24시간이 지나 자동 로그아웃됐어요');
+      return;  // onAuthStateChanged가 null로 다시 호출됨
+    }
+    // 세션 시작 시각이 없으면 지금으로 기록 (새 로그인)
+    if (!loginAt) lsSet(LS_LOGIN_AT, String(Date.now()));
+    lsSet(LS_LAST_EMAIL, user.email || '');
+
     state.user = {
       uid: user.uid,
       name: user.displayName || user.email.split('@')[0],
       email: user.email,
       photo: user.photoURL || ''
     };
-    // upsert user doc
     await setDoc(doc(db, 'users', user.uid), {
       name: state.user.name,
       email: state.user.email,
@@ -651,7 +693,11 @@ onAuthStateChanged(auth, async (user) => {
 
 const handleSignIn = async () => {
   try {
+    // 새 로그인 → 세션 타이머 리셋
+    const lastEmail = lsGet(LS_LAST_EMAIL);
+    if (lastEmail) provider.setCustomParameters({ login_hint: lastEmail });
     await signInWithPopup(auth, provider);
+    lsSet(LS_LOGIN_AT, String(Date.now()));
   } catch (e) {
     console.error(e);
     toast('로그인 실패: ' + e.message);
@@ -660,6 +706,7 @@ const handleSignIn = async () => {
 
 const handleSignOut = async () => {
   if (!confirm('로그아웃 할까요?')) return;
+  try { localStorage.removeItem(LS_LOGIN_AT); } catch(e) {}
   clearListeners();
   await signOut(auth);
 };
@@ -828,12 +875,15 @@ const createMeeting = async (clubId, data) => {
     meetingDate: Timestamp.fromDate(data.meetingDate),
     location: data.location || '',
     books: data.books || [],            // [{title, author, description, link, thumbnail}]
+    relatedLinks: data.relatedLinks || [],  // 유튜브 등 관련 링크 [{label, url}]
     extraInfo: data.extraInfo || '',
     rsvp: {},
     attendees: [],
     createdAt: serverTimestamp(),
     createdBy: state.user.uid
   });
+  // 새 장소면 클럽 단골 장소에 저장
+  await rememberLocation(clubId, data.location);
   toast('회차가 생성됐어요');
 };
 
@@ -842,10 +892,25 @@ const updateMeeting = async (clubId, meetingId, data) => {
     meetingDate: Timestamp.fromDate(data.meetingDate),
     location: data.location || '',
     books: data.books || [],
+    relatedLinks: data.relatedLinks || [],
     extraInfo: data.extraInfo || '',
     updatedAt: serverTimestamp()
   });
+  await rememberLocation(clubId, data.location);
   toast('회차가 수정됐어요');
+};
+
+// 단골 장소 저장 (클럽 문서의 favoriteLocations 배열, 최대 6개)
+const rememberLocation = async (clubId, loc) => {
+  if (!loc || !loc.trim()) return;
+  const club = state.currentClub;
+  if (!club) return;
+  const existing = club.favoriteLocations || [];
+  if (existing.includes(loc.trim())) return;
+  const updated = [loc.trim(), ...existing].slice(0, 6);
+  try {
+    await updateDoc(doc(db, 'clubs', clubId), { favoriteLocations: updated });
+  } catch (e) { /* 권한 없으면 조용히 무시 */ }
 };
 
 // 기존 단권 데이터(bookTitle/bookDescription/bookLink)를 books 배열로 정규화
@@ -867,26 +932,32 @@ const firstBookTitle = (mtg) => {
 // ============================================================
 const searchGoogleBooks = async (queryStr) => {
   if (!queryStr || queryStr.trim().length < 2) return [];
-  const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(queryStr.trim())}&maxResults=6&langRestrict=ko&country=KR`;
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return [];
-    const data = await res.json();
-    if (!data.items) return [];
-    return data.items.map(it => {
-      const v = it.volumeInfo || {};
-      return {
-        title: v.title || '',
-        author: (v.authors || []).join(', '),
-        description: v.description ? v.description.slice(0, 300) : '',
-        link: v.infoLink || v.canonicalVolumeLink || '',
-        thumbnail: (v.imageLinks?.thumbnail || v.imageLinks?.smallThumbnail || '').replace('http://', 'https://')
-      };
-    }).filter(b => b.title);
-  } catch (e) {
-    console.error('Google Books error', e);
-    return [];
+  const q = encodeURIComponent(queryStr.trim());
+  const base = `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=8`;
+  // 1차: 위치 파라미터 없이 (IP 기반). 2차: geo 에러 시 country=US 명시
+  const urls = [base, `${base}&country=US`];
+  for (const url of urls) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;          // 403(geo 등)이면 다음 URL 시도
+      const data = await res.json();
+      if (!data.items || data.items.length === 0) continue;
+      const mapped = data.items.map(it => {
+        const v = it.volumeInfo || {};
+        return {
+          title: v.title ? (v.subtitle ? `${v.title} - ${v.subtitle}` : v.title) : '',
+          author: (v.authors || []).join(', '),
+          description: v.description ? v.description.slice(0, 300) : '',
+          link: v.infoLink || v.canonicalVolumeLink || '',
+          thumbnail: (v.imageLinks?.thumbnail || v.imageLinks?.smallThumbnail || '').replace('http://', 'https://')
+        };
+      }).filter(b => b.title);
+      if (mapped.length > 0) return mapped;
+    } catch (e) {
+      console.error('Google Books error', e);
+    }
   }
+  return [];
 };
 
 const updateRSVP = async (clubId, meetingId, status) => {
@@ -926,6 +997,8 @@ const deleteMeeting = async (clubId, meetingId) => {
 // ============================================================
 let commentsUnsub = null;
 let editingBooks = [];   // 회차 생성/수정 중인 도서 목록
+let editingLinks = [];   // 회차 생성/수정 중인 관련 링크 [{label, url}]
+let editingRecBooks = [];// 소감 추천 책 목록
 let bookSearchTimer = null;
 let reflectionsUnsub = null;
 
@@ -960,13 +1033,16 @@ const deleteComment = async (clubId, meetingId, commentId) => {
   await deleteDoc(doc(db, 'clubs', clubId, 'meetings', meetingId, 'comments', commentId));
 };
 
-const saveReflection = async (clubId, meetingId, text, rating) => {
-  if (!text.trim() && !rating) { toast('별점이나 소감을 남겨주세요'); return; }
+const saveReflection = async (clubId, meetingId, text, rating, recBooks) => {
+  if (!text.trim() && !rating && (!recBooks || recBooks.length === 0)) { toast('별점·소감·추천 책 중 하나는 남겨주세요'); return; }
   await setDoc(doc(db, 'clubs', clubId, 'meetings', meetingId, 'reflections', state.user.uid), {
     authorId: state.user.uid,
     authorName: state.user.name,
     text: text.trim(),
     rating: rating || 0,        // 0 = 별점 없음, 1~5
+    recBooks: (recBooks || []).slice(0, 3).map(b => ({
+      title: b.title || '', author: b.author || '', link: b.link || '', thumbnail: b.thumbnail || ''
+    })),
     updatedAt: serverTimestamp()
   });
   toast('소감이 저장됐어요');
@@ -1003,6 +1079,7 @@ const renderLoading = () => {
 };
 
 const renderLogin = () => {
+  const lastEmail = lsGet(LS_LAST_EMAIL);
   $app.innerHTML = `
     <div class="login">
       <div class="login-mark serif">❦</div>
@@ -1014,6 +1091,7 @@ const renderLogin = () => {
         <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/></svg>
         Google로 시작하기
       </button>
+      ${lastEmail ? `<p class="last-account">최근 로그인: <strong>${escapeHtml(lastEmail)}</strong></p>` : ''}
     </div>
   `;
   document.getElementById('signin-btn').addEventListener('click', handleSignIn);
@@ -1339,6 +1417,11 @@ const renderMeetingDetail = () => {
             </div>
           `;
         })()}
+        ${(Array.isArray(mtg.relatedLinks) && mtg.relatedLinks.length > 0) ? `
+          <div class="related-links">
+            ${mtg.relatedLinks.map(l => `<a class="related-link" href="${escapeHtml(l.url)}" target="_blank" rel="noopener">🔗 ${escapeHtml(l.label || '관련 링크')}</a>`).join('')}
+          </div>
+        ` : ''}
         ${mtg.extraInfo ? `<div class="extra-info-box"><span class="extra-info-label">안내</span>${linkify(mtg.extraInfo)}</div>` : ''}
       </div>
 
@@ -1395,6 +1478,21 @@ const renderMeetingDetail = () => {
             <div class="reflection">
               <div class="reflection-author">${escapeHtml(r.authorName || '?')}${r.rating ? ` <span class="reflection-stars">${renderStars(r.rating)}</span>` : ''}</div>
               ${r.text ? `<div class="reflection-body">${linkify(r.text)}</div>` : ''}
+              ${(Array.isArray(r.recBooks) && r.recBooks.length > 0) ? `
+                <div class="rec-books">
+                  <div class="rec-books-label">추천 책</div>
+                  ${r.recBooks.map(b => `
+                    <div class="rec-book">
+                      ${b.thumbnail ? `<img class="rec-book-thumb" src="${escapeHtml(b.thumbnail)}" alt="">` : `<div class="rec-book-thumb book-thumb-empty">📖</div>`}
+                      <div class="rec-book-info">
+                        <div class="rec-book-title">${escapeHtml(b.title)}</div>
+                        ${b.author ? `<div class="rec-book-author">${escapeHtml(b.author)}</div>` : ''}
+                      </div>
+                      ${b.link ? `<a class="rec-book-link" href="${escapeHtml(b.link)}" target="_blank" rel="noopener">→</a>` : ''}
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
             </div>
           `).join('') : '<div class="empty" style="padding:16px;">아직 소감이 없어요</div>'}
           ${!locked ? `
@@ -1405,6 +1503,15 @@ const renderMeetingDetail = () => {
                 <span class="star-clear" id="star-clear" style="${(myReflection?.rating || 0) ? '' : 'display:none;'}">지우기</span>
               </div>
               <textarea id="reflection-input" placeholder="이번 회차에서 느낀 점이나 인상 깊었던 부분을 짧게 남겨보세요 (선택)" style="width:100%; padding:12px 14px; border:1px solid var(--line); background:var(--bg-card); border-radius:10px; min-height:80px; font-size:14px; resize:vertical; margin-top:10px;">${escapeHtml(myReflection?.text || '')}</textarea>
+              <div class="rec-editor-wrap">
+                <div class="rec-editor-label">비슷한 책 추천 <span style="color:var(--ink-mute);">(최대 3권, 선택)</span></div>
+                <div id="rec-book-editor"></div>
+                <div class="book-search-wrap" id="rec-search-wrap" style="display:none;">
+                  <input id="rec-book-search" placeholder="추천할 책 제목 검색" autocomplete="off">
+                  <div id="rec-book-search-results"></div>
+                </div>
+                <button type="button" class="book-manual-btn" id="rec-add-btn">+ 추천 책 추가</button>
+              </div>
               <div style="margin-top:8px; text-align:right;">
                 <button class="btn-primary" id="save-reflection-btn">${myReflection ? '수정' : '저장'}</button>
               </div>
@@ -1474,9 +1581,81 @@ const renderMeetingDetail = () => {
   });
   document.getElementById('star-clear')?.addEventListener('click', () => { pickedRating = 0; refreshStars(); });
 
+  // 추천 책 에디터
+  editingRecBooks = Array.isArray(myReflection?.recBooks) ? myReflection.recBooks.map(b => ({...b})) : [];
+  const renderRecEditor = () => {
+    const wrap = document.getElementById('rec-book-editor');
+    if (!wrap) return;
+    wrap.innerHTML = editingRecBooks.map((b, i) => `
+      <div class="book-chip">
+        ${b.thumbnail ? `<img class="book-chip-thumb" src="${escapeHtml(b.thumbnail)}" alt="">` : `<div class="book-chip-thumb book-thumb-empty">📖</div>`}
+        <div class="book-chip-info">
+          <div class="book-chip-title">${escapeHtml(b.title)}</div>
+          ${b.author ? `<div class="book-chip-author">${escapeHtml(b.author)}</div>` : ''}
+        </div>
+        <button type="button" class="book-chip-remove" data-rmrec="${i}">✕</button>
+      </div>
+    `).join('');
+    wrap.querySelectorAll('[data-rmrec]').forEach(btn => {
+      btn.addEventListener('click', () => { editingRecBooks.splice(parseInt(btn.dataset.rmrec), 1); renderRecEditor(); updateRecAddBtn(); });
+    });
+  };
+  const updateRecAddBtn = () => {
+    const btn = document.getElementById('rec-add-btn');
+    if (btn) btn.style.display = editingRecBooks.length >= 3 ? 'none' : '';
+  };
+  renderRecEditor();
+  updateRecAddBtn();
+
+  let recSearchTimer = null;
+  document.getElementById('rec-add-btn')?.addEventListener('click', () => {
+    const wrap = document.getElementById('rec-search-wrap');
+    if (wrap) { wrap.style.display = ''; document.getElementById('rec-book-search')?.focus(); }
+  });
+  const recInput = document.getElementById('rec-book-search');
+  const recResults = document.getElementById('rec-book-search-results');
+  if (recInput && recResults) {
+    recInput.addEventListener('input', () => {
+      clearTimeout(recSearchTimer);
+      recSearchTimer = setTimeout(async () => {
+        const q = recInput.value.trim();
+        if (q.length < 2) { recResults.innerHTML = ''; return; }
+        recResults.innerHTML = `<div class="book-search-loading">검색 중…</div>`;
+        const books = await searchGoogleBooks(q);
+        if (books.length === 0) {
+          recResults.innerHTML = `<div class="book-search-loading">결과 없음. 제목만 직접 추가하려면 길게 누르지 말고 아래를 이용하세요.</div><button type="button" class="book-manual-btn" id="rec-manual">직접 입력</button>`;
+          document.getElementById('rec-manual')?.addEventListener('click', () => {
+            const t = prompt('추천할 책 제목'); if (!t || !t.trim()) return;
+            const a = prompt('저자 (선택)') || '';
+            editingRecBooks.push({ title: t.trim(), author: a.trim(), link: '', thumbnail: '' });
+            recInput.value = ''; recResults.innerHTML = ''; renderRecEditor(); updateRecAddBtn();
+          });
+          return;
+        }
+        recResults.innerHTML = books.map((b, i) => `
+          <button type="button" class="book-result" data-recidx="${i}">
+            ${b.thumbnail ? `<img class="book-result-thumb" src="${escapeHtml(b.thumbnail)}" alt="">` : `<div class="book-result-thumb book-thumb-empty">📖</div>`}
+            <div class="book-result-info">
+              <div class="book-result-title">${escapeHtml(b.title)}</div>
+              ${b.author ? `<div class="book-result-author">${escapeHtml(b.author)}</div>` : ''}
+            </div>
+          </button>
+        `).join('');
+        recResults.querySelectorAll('[data-recidx]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            editingRecBooks.push({...books[parseInt(btn.dataset.recidx)]});
+            recInput.value = ''; recResults.innerHTML = '';
+            document.getElementById('rec-search-wrap').style.display = 'none';
+            renderRecEditor(); updateRecAddBtn();
+          });
+        });
+      }, 450);
+    });
+  }
+
   document.getElementById('save-reflection-btn')?.addEventListener('click', async () => {
     const ta = document.getElementById('reflection-input');
-    await saveReflection(state.currentClubId, mtg.id, ta.value, pickedRating);
+    await saveReflection(state.currentClubId, mtg.id, ta.value, pickedRating, editingRecBooks);
   });
 };
 
@@ -1593,6 +1772,37 @@ const openManualBookEntry = () => {
   renderBookEditor();
 };
 
+// 관련 링크 에디터
+const renderLinkEditor = () => {
+  const wrap = document.getElementById('link-editor');
+  if (!wrap) return;
+  wrap.innerHTML = editingLinks.map((l, i) => `
+    <div class="link-chip">
+      <div class="link-chip-info">
+        <div class="link-chip-label">${escapeHtml(l.label || '링크')}</div>
+        <div class="link-chip-url">${escapeHtml(l.url)}</div>
+      </div>
+      <button type="button" class="book-chip-remove" data-rmlink="${i}">✕</button>
+    </div>
+  `).join('');
+  wrap.querySelectorAll('[data-rmlink]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      editingLinks.splice(parseInt(btn.dataset.rmlink), 1);
+      renderLinkEditor();
+    });
+  });
+};
+
+const addLinkPrompt = () => {
+  const url = prompt('링크 URL을 붙여넣으세요 (예: 유튜브 주소)');
+  if (!url || !url.trim()) return;
+  let normalized = url.trim();
+  if (!/^https?:\/\//i.test(normalized)) normalized = 'https://' + normalized;
+  const label = prompt('링크 이름 (선택, 예: 작가 인터뷰 영상)') || '관련 링크';
+  editingLinks.push({ label: label.trim() || '관련 링크', url: normalized });
+  renderLinkEditor();
+};
+
 // ============================================================
 // 9d) STATS
 // ============================================================
@@ -1683,6 +1893,7 @@ const renderModal = () => {
       defaultDate = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       defaultTime = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
       editingBooks = getBooks(mtg).map(b => ({...b}));
+      editingLinks = Array.isArray(mtg.relatedLinks) ? mtg.relatedLinks.map(l => ({...l})) : [];
     } else {
       const now = new Date();
       now.setMinutes(0);
@@ -1690,7 +1901,9 @@ const renderModal = () => {
       defaultDate = now.toISOString().slice(0, 10);
       defaultTime = '19:00';
       editingBooks = [];
+      editingLinks = [];
     }
+    const favLocs = state.currentClub.favoriteLocations || [];
     content = `
       <div class="modal-title serif">${editing ? '회차 수정' : '새 회차 만들기'}</div>
       <div class="modal-sub">${escapeHtml(state.currentClub.name)}</div>
@@ -1706,7 +1919,8 @@ const renderModal = () => {
       </div>
       <div class="form-field">
         <label>장소</label>
-        <input id="m-location" placeholder="예: 신촌 카페 OO / 줌" value="${editing ? escapeHtml(mtg.location || '') : ''}">
+        ${favLocs.length > 0 ? `<div class="loc-chips">${favLocs.map(l => `<button type="button" class="loc-chip" data-loc="${escapeHtml(l)}">${escapeHtml(l)}</button>`).join('')}</div>` : ''}
+        <input id="m-location" placeholder="장소 입력 (자주 가는 곳은 위 버튼)" value="${editing ? escapeHtml(mtg.location || '') : ''}">
       </div>
       <div class="form-field">
         <label>도서 <span style="color:var(--ink-mute); font-weight:400;">(여러 권 가능)</span></label>
@@ -1716,6 +1930,11 @@ const renderModal = () => {
           <div id="book-search-results"></div>
           <button type="button" class="book-manual-btn" id="book-manual-btn">검색 없이 직접 입력</button>
         </div>
+      </div>
+      <div class="form-field">
+        <label>관련 링크 (선택) <span style="color:var(--ink-mute); font-weight:400;">유튜브 등</span></label>
+        <div id="link-editor"></div>
+        <button type="button" class="book-manual-btn" id="link-add-btn">+ 링크 추가</button>
       </div>
       <div class="form-field">
         <label>추가 정보 (선택)</label>
@@ -1849,7 +2068,17 @@ const renderModal = () => {
     const editing = state.modal === 'editMeeting';
     renderBookEditor();
     wireBookSearch();
+    renderLinkEditor();
     document.getElementById('book-manual-btn')?.addEventListener('click', openManualBookEntry);
+    document.getElementById('link-add-btn')?.addEventListener('click', addLinkPrompt);
+    // 단골 장소 칩 → 입력란 채우기
+    document.querySelectorAll('[data-loc]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('m-location').value = btn.dataset.loc;
+        document.querySelectorAll('[data-loc]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
     document.getElementById('meeting-submit').addEventListener('click', async () => {
       const date = document.getElementById('m-date').value;
       const time = document.getElementById('m-time').value;
@@ -1866,6 +2095,7 @@ const renderModal = () => {
           link: b.link || '',
           thumbnail: b.thumbnail || ''
         })),
+        relatedLinks: editingLinks.map(l => ({ label: l.label || '관련 링크', url: l.url || '' })).filter(l => l.url),
         extraInfo: document.getElementById('m-extra').value.trim()
       };
       if (editing) {
@@ -1906,7 +2136,35 @@ const renderModal = () => {
   }
 };
 
+// ============================================================
+// 폰 뒤로가기 버튼 처리 (History API)
+// ============================================================
+const pushNav = () => {
+  try { history.pushState({ t: Date.now() }, ''); } catch (e) {}
+};
+
+window.addEventListener('popstate', () => {
+  if (state.modal) {
+    state.modal = null;
+    render();
+    pushNav();
+    return;
+  }
+  if (state.view === 'club' && state.currentMeetingId) {
+    closeMeeting();
+    pushNav();
+    return;
+  }
+  if (state.view === 'club') {
+    backToClubList();
+    pushNav();
+    return;
+  }
+  pushNav();
+});
+
 // Initial render
+pushNav();
 render();
 </script>
 </body>
