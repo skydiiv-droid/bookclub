@@ -322,6 +322,19 @@ a:hover { text-decoration: underline; }
 .rec-book-link { color: var(--accent); font-size: 16px; padding: 0 6px; }
 .rec-editor-wrap { margin-top: 12px; padding: 12px; background: var(--bg-soft); border-radius: 10px; }
 .rec-editor-label { font-size: 12px; color: var(--ink-soft); font-weight: 500; margin-bottom: 8px; }
+.club-type-select { display: flex; flex-direction: column; gap: 8px; }
+.club-type { text-align: left; padding: 14px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--bg-card); transition: all 0.15s ease; }
+.club-type.active { border-color: var(--accent); background: var(--accent-bg); }
+.club-type-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; color: var(--ink); }
+.club-type-desc { font-size: 12px; color: var(--ink-soft); line-height: 1.45; }
+.vote-box { padding: 14px; background: var(--accent-bg); border-radius: 12px; }
+.vote-title { font-size: 14px; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
+.vote-sub { font-size: 12px; color: var(--ink-soft); line-height: 1.45; margin-bottom: 10px; }
+.vote-myvote { font-size: 13px; font-weight: 500; color: var(--ink); }
+.vote-actions { display: flex; gap: 8px; }
+.vote-btn { flex: 1; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 500; }
+.vote-yes { background: var(--danger); color: white; }
+.vote-no { background: var(--bg-card); color: var(--ink); border: 1px solid var(--line); }
 .stats-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
 .stat-box { background: var(--bg-card); border: 1px solid var(--line-soft); border-radius: 12px; padding: 16px 8px; text-align: center; }
 .stat-num { font-size: 28px; color: var(--accent); line-height: 1; margin-bottom: 6px; }
@@ -735,7 +748,7 @@ const listenToClubs = () => {
   state.unsubs.push(u1, u2);
 };
 
-const createClub = async (name, description) => {
+const createClub = async (name, description, openMeetings) => {
   const inviteCode = generateInviteCode();
   const userInfo = { name: state.user.name, photo: state.user.photo };
   const ref = await addDoc(collection(db, 'clubs'), {
@@ -743,6 +756,7 @@ const createClub = async (name, description) => {
     description: description || '',
     hostId: state.user.uid,
     hostName: state.user.name,
+    openMeetings: !!openMeetings,   // true=누구나 모임 개설, false=개설자만
     inviteCode,
     memberIds: [state.user.uid],
     memberInfo: { [state.user.uid]: userInfo },
@@ -750,7 +764,6 @@ const createClub = async (name, description) => {
     pendingInfo: {},
     createdAt: serverTimestamp()
   });
-  // Separate invite-code lookup doc — public read so non-members can resolve code → clubId
   await setDoc(doc(db, 'inviteCodes', inviteCode), {
     clubId: ref.id,
     createdBy: state.user.uid,
@@ -758,6 +771,25 @@ const createClub = async (name, description) => {
   });
   toast('모임이 생성됐어요');
   return ref.id;
+};
+
+// 그룹 성격 변경: 개설자 고정 → 누구나 개설 (단방향, 되돌릴 수 없음)
+const convertToOpenMeetings = async (clubId) => {
+  const club = state.currentClub;
+  if (!club || club.hostId !== state.user.uid) { toast('개설자만 변경할 수 있어요'); return; }
+  if (club.openMeetings) { toast('이미 누구나 개설할 수 있는 모임이에요'); return; }
+  if (!confirm('이 모임을 "누구나 모임을 열 수 있는" 방식으로 바꿀까요?\n\n한 번 바꾸면 다시 되돌릴 수 없어요. 앞으로는 모든 멤버가 회차를 만들고 수정·삭제할 수 있게 됩니다.')) return;
+  await updateDoc(doc(db, 'clubs', clubId), { openMeetings: true });
+  toast('이제 누구나 모임을 열 수 있어요');
+  state.modal = null;
+  render();
+};
+
+// 권한 헬퍼: 회차를 만들고 운영할 수 있는 사람인가
+const canManageMeetings = (club) => {
+  if (!club) return false;
+  if (club.openMeetings) return (club.memberIds || []).includes(state.user.uid);
+  return club.hostId === state.user.uid;
 };
 
 const joinClubByCode = async (code) => {
@@ -835,26 +867,111 @@ const kickMember = async (clubId, userId, memberName) => {
   toast(`${memberName}님을 내보냈어요`);
 };
 
+// 실제 삭제 수행 (회차·초대코드·클럽 문서 제거)
+const performClubDeletion = async (clubId, club) => {
+  const mSnap = await getDocs(collection(db, 'clubs', clubId, 'meetings'));
+  for (const m of mSnap.docs) {
+    await deleteDoc(doc(db, 'clubs', clubId, 'meetings', m.id));
+  }
+  if (club.inviteCode) {
+    await deleteDoc(doc(db, 'inviteCodes', club.inviteCode)).catch(()=>{});
+  }
+  await deleteDoc(doc(db, 'clubs', clubId));
+};
+
+// 개설자 고정 그룹: 개설자가 바로 삭제
 const deleteClub = async (clubId) => {
   const club = state.currentClub;
   if (!club || club.hostId !== state.user.uid) return;
   if (!confirm(`'${club.name}' 모임을 완전히 삭제할까요?\n모든 회차·댓글·소감·기록이 사라지고 되돌릴 수 없어요.`)) return;
   if (!confirm('정말 삭제할까요? 이 작업은 취소할 수 없어요.')) return;
-  // 회차 서브컬렉션은 클라이언트에서 일괄 삭제 (소규모라 가능)
   try {
-    const mSnap = await getDocs(collection(db, 'clubs', clubId, 'meetings'));
-    for (const m of mSnap.docs) {
-      await deleteDoc(doc(db, 'clubs', clubId, 'meetings', m.id));
-    }
-    if (club.inviteCode) {
-      await deleteDoc(doc(db, 'inviteCodes', club.inviteCode)).catch(()=>{});
-    }
-    await deleteDoc(doc(db, 'clubs', clubId));
+    await performClubDeletion(clubId, club);
     toast('모임이 삭제됐어요');
     backToClubList();
   } catch (e) {
     console.error(e);
     toast('삭제 중 오류: ' + e.message);
+  }
+};
+
+const VOTE_AUTO_DAYS = 7;
+
+// 누구나 개설 그룹: 삭제 투표 시작
+const startDeleteVote = async (clubId) => {
+  const club = state.currentClub;
+  if (!club) return;
+  if (club.deleteVote) { toast('이미 진행 중인 삭제 투표가 있어요'); return; }
+  if (!confirm('모임 삭제 투표를 시작할까요?\n\n· 모든 멤버가 찬성하면 삭제됩니다\n· 한 명이라도 반대하면 즉시 취소됩니다\n· 7일간 응답 없는 사람은 찬성으로 간주됩니다')) return;
+  await updateDoc(doc(db, 'clubs', clubId), {
+    deleteVote: {
+      startedBy: state.user.uid,
+      startedByName: state.user.name,
+      startedAt: Timestamp.now(),
+      voterIds: [...(club.memberIds || [])],   // 시작 시점 멤버 고정
+      votes: { [state.user.uid]: 'yes' }       // 시작한 사람은 자동 찬성
+    }
+  });
+  toast('삭제 투표를 시작했어요');
+  await checkDeleteVote(clubId);
+};
+
+const castDeleteVote = async (clubId, vote) => {
+  const club = state.currentClub;
+  if (!club || !club.deleteVote) return;
+  await updateDoc(doc(db, 'clubs', clubId), {
+    [`deleteVote.votes.${state.user.uid}`]: vote
+  });
+  // 반대 1표 → 즉시 취소
+  if (vote === 'no') {
+    await updateDoc(doc(db, 'clubs', clubId), { deleteVote: deleteField() });
+    toast('반대표가 나와 삭제가 취소됐어요');
+    return;
+  }
+  await checkDeleteVote(clubId);
+};
+
+const cancelDeleteVote = async (clubId) => {
+  const club = state.currentClub;
+  if (!club || !club.deleteVote) return;
+  // 시작한 사람만 취소 가능
+  if (club.deleteVote.startedBy !== state.user.uid) { toast('투표를 시작한 사람만 취소할 수 있어요'); return; }
+  await updateDoc(doc(db, 'clubs', clubId), { deleteVote: deleteField() });
+  toast('삭제 투표를 취소했어요');
+};
+
+// 투표 완료 조건 확인 (만장일치 또는 7일 경과 자동찬성)
+const checkDeleteVote = async (clubId) => {
+  const club = state.currentClub;
+  if (!club || !club.deleteVote) return;
+  const dv = club.deleteVote;
+  // 시작 시점 멤버 중 현재도 멤버인 사람만 카운트 (탈퇴자 제외)
+  const currentMembers = club.memberIds || [];
+  const eligible = (dv.voterIds || []).filter(uid => currentMembers.includes(uid));
+  const startedAt = dv.startedAt?.toDate ? dv.startedAt.toDate() : new Date(dv.startedAt);
+  const autoYes = (Date.now() - startedAt.getTime()) > VOTE_AUTO_DAYS * 24 * 60 * 60 * 1000;
+
+  // 반대가 하나라도 있으면 취소
+  if (Object.values(dv.votes || {}).some(v => v === 'no')) {
+    await updateDoc(doc(db, 'clubs', clubId), { deleteVote: deleteField() });
+    toast('반대표가 있어 삭제가 취소됐어요');
+    return;
+  }
+  // 모든 적격자가 찬성했거나, 7일 지나 미응답 자동 찬성
+  const allYes = eligible.every(uid => {
+    if (dv.votes?.[uid] === 'yes') return true;
+    if (autoYes) return true;  // 무응답 자동 찬성
+    return false;
+  });
+  if (allYes && eligible.length > 0) {
+    try {
+      await performClubDeletion(clubId, club);
+      toast('만장일치로 모임이 삭제됐어요');
+      backToClubList();
+    } catch (e) {
+      console.error(e);
+      toast('삭제 처리 중 오류: ' + e.message);
+    }
   }
 };
 
@@ -930,16 +1047,24 @@ const firstBookTitle = (mtg) => {
 // ============================================================
 // Google Books 검색 (CORS 허용, 키 없이 호출 가능)
 // ============================================================
+// ⬇️ 나중에 발급받은 Google Books API 키를 따옴표 안에 붙여넣으세요 (예: "AIzaSy...")
+//    키가 없으면 검색은 동작하지 않습니다 (구글이 키 없는 호출을 막음).
+const GOOGLE_BOOKS_KEY = "";
+
 const searchGoogleBooks = async (queryStr) => {
   if (!queryStr || queryStr.trim().length < 2) return [];
+  if (!GOOGLE_BOOKS_KEY) {
+    toast('책 검색 키가 아직 설정되지 않았어요 (직접 입력은 가능)');
+    return [];
+  }
   const q = encodeURIComponent(queryStr.trim());
-  const base = `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=8`;
-  // 1차: 위치 파라미터 없이 (IP 기반). 2차: geo 에러 시 country=US 명시
+  const keyParam = `&key=${GOOGLE_BOOKS_KEY}`;
+  const base = `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=8${keyParam}`;
   const urls = [base, `${base}&country=US`];
   for (const url of urls) {
     try {
       const res = await fetch(url);
-      if (!res.ok) continue;          // 403(geo 등)이면 다음 URL 시도
+      if (!res.ok) continue;
       const data = await res.json();
       if (!data.items || data.items.length === 0) continue;
       const mapped = data.items.map(it => {
@@ -1163,6 +1288,8 @@ const openClub = (clubId) => {
   state.currentMeetingId = null;
   listenToMeetings(clubId);
   render();
+  // 입장 시 진행 중인 삭제 투표가 7일 경과로 완료 조건 충족했는지 확인
+  if (state.currentClub?.deleteVote) checkDeleteVote(clubId);
 };
 
 const backToClubList = () => {
@@ -1179,6 +1306,7 @@ const backToClubList = () => {
 const renderClub = () => {
   if (!state.currentClub) { renderLoading(); return; }
   const isHost = state.currentClub.hostId === state.user.uid;
+  const canManage = canManageMeetings(state.currentClub);
   const pendingCount = state.currentClub.pendingIds?.length || 0;
 
   // If a meeting is selected, render meeting detail
@@ -1204,12 +1332,12 @@ const renderClub = () => {
     </div>
     <div class="screen">
       <h2 class="section-title serif">${escapeHtml(state.currentClub.name)}</h2>
-      <p class="section-sub">${state.currentClub.memberIds?.length || 0}명 · 모임장 ${escapeHtml(state.currentClub.hostName || '')}${state.currentClub.description ? ' · ' + escapeHtml(state.currentClub.description) : ''}</p>
+      <p class="section-sub">${state.currentClub.memberIds?.length || 0}명 · ${state.currentClub.openMeetings ? '누구나 모임을 열 수 있어요' : '개설 ' + escapeHtml(state.currentClub.hostName || '')}${state.currentClub.description ? ' · ' + escapeHtml(state.currentClub.description) : ''}</p>
 
       ${state.calendarMode === 'month' ? renderMonthView() : renderListView()}
 
       <button class="action-btn" id="stats-btn" style="margin-top:16px;">📊 모임 통계</button>
-      ${isHost ? `<button class="action-btn" id="create-meeting-btn" style="margin-top:10px;">${iconPlus} 새 회차 만들기</button>` : ''}
+      ${canManage ? `<button class="action-btn" id="create-meeting-btn" style="margin-top:10px;">${iconPlus} 새 회차 만들기</button>` : ''}
     </div>
   `;
   document.getElementById('back-btn').addEventListener('click', backToClubList);
@@ -1221,8 +1349,8 @@ const renderClub = () => {
   if (isHost) {
     document.getElementById('invite-btn')?.addEventListener('click', () => { state.modal = 'invite'; render(); });
     document.getElementById('pending-btn')?.addEventListener('click', () => { state.modal = 'pending'; render(); });
-    document.getElementById('create-meeting-btn')?.addEventListener('click', () => { state.modal = 'createMeeting'; render(); });
   }
+  document.getElementById('create-meeting-btn')?.addEventListener('click', () => { state.modal = 'createMeeting'; render(); });
   // calendar nav + day click
   document.querySelectorAll('[data-cal-nav]').forEach(b => {
     b.addEventListener('click', () => {
@@ -1359,6 +1487,7 @@ const renderMeetingDetail = () => {
     return;
   }
   const isHost = state.currentClub.hostId === state.user.uid;
+  const canManage = canManageMeetings(state.currentClub);
   const isPast = isPastMeeting(mtg.meetingDate);
   const locked = isPastEditLock(mtg.meetingDate);
   const myRSVP = mtg.rsvp?.[state.user.uid];
@@ -1376,8 +1505,8 @@ const renderMeetingDetail = () => {
       </div>
       <div style="display:flex; gap:4px; align-items:center;">
         <button class="icon-btn" id="share-meeting-btn" title="공유">${iconShare}</button>
-        ${isHost && !locked ? `<button class="icon-btn" id="edit-meeting-btn" title="수정">${iconEdit}</button>` : ''}
-        ${isHost && !locked ? `<button class="btn-text" id="delete-meeting-btn" style="color:var(--danger)">삭제</button>` : ''}
+        ${canManage && !locked ? `<button class="icon-btn" id="edit-meeting-btn" title="수정">${iconEdit}</button>` : ''}
+        ${canManage && !locked ? `<button class="btn-text" id="delete-meeting-btn" style="color:var(--danger)">삭제</button>` : ''}
       </div>
     </div>
     <div class="screen">
@@ -1456,15 +1585,15 @@ const renderMeetingDetail = () => {
         <div class="detail-section">
           <div class="detail-section-title">
             <span>실제 출석자 (${mtg.attendees?.length || 0}/${memberIds.length})</span>
-            ${isHost && !locked ? '<span style="color:var(--ink-mute); font-weight:400; text-transform:none; letter-spacing:0;">모임장이 체크</span>' : ''}
+            ${canManage && !locked ? `<span style="color:var(--ink-mute); font-weight:400; text-transform:none; letter-spacing:0;">${state.currentClub.openMeetings ? '멤버가 체크' : '개설자가 체크'}</span>` : ''}
           </div>
           ${memberIds.map(uid => {
             const info = memberInfo[uid] || {};
             const checked = mtg.attendees?.includes(uid);
             return `
               <div class="attendance-check">
-                <input type="checkbox" id="att-${uid}" ${checked?'checked':''} ${(!isHost || locked)?'disabled':''} data-attend-uid="${uid}" data-attend-current="${checked?1:0}">
-                <label for="att-${uid}">${escapeHtml(info.name || '(이름없음)')}${uid === state.currentClub.hostId ? ' · 모임장' : ''}</label>
+                <input type="checkbox" id="att-${uid}" ${checked?'checked':''} ${(!canManage || locked)?'disabled':''} data-attend-uid="${uid}" data-attend-current="${checked?1:0}">
+                <label for="att-${uid}">${escapeHtml(info.name || '(이름없음)')}${uid === state.currentClub.hostId ? ' · 개설자' : ''}</label>
               </div>
             `;
           }).join('')}
@@ -1863,7 +1992,7 @@ const renderModal = () => {
   if (state.modal === 'createClub') {
     content = `
       <div class="modal-title serif">새 모임 만들기</div>
-      <div class="modal-sub">내가 모임장이 되는 새 책모임을 만들어요.</div>
+      <div class="modal-sub">새 책모임을 만들어요.</div>
       <div class="form-field">
         <label>모임 이름</label>
         <input id="club-name" placeholder="예: 화요일 밤 독서모임" maxlength="30">
@@ -1871,6 +2000,19 @@ const renderModal = () => {
       <div class="form-field">
         <label>소개 (선택)</label>
         <textarea id="club-desc" placeholder="모임 성격, 진행 방식 등" maxlength="200"></textarea>
+      </div>
+      <div class="form-field">
+        <label>모임 개설 방식</label>
+        <div class="club-type-select">
+          <button type="button" class="club-type active" data-open="false">
+            <div class="club-type-title">개설자가 일정 관리</div>
+            <div class="club-type-desc">만든 사람이 회차를 열고 정리해요. 일정이 한 곳에서 깔끔하게 관리돼요.</div>
+          </button>
+          <button type="button" class="club-type" data-open="true">
+            <div class="club-type-title">누구나 일정 개설</div>
+            <div class="club-type-desc">멤버 누구나 회차를 열 수 있어요. 돌아가며 모임을 진행하는 그룹에 잘 맞아요.</div>
+          </button>
+        </div>
       </div>
       <button class="btn-primary" id="create-club-submit" style="width:100%; padding:12px;">모임 만들기</button>
     `;
@@ -1944,27 +2086,59 @@ const renderModal = () => {
     `;
   } else if (state.modal === 'members') {
     const isHost = state.currentClub.hostId === state.user.uid;
+    const isOpen = !!state.currentClub.openMeetings;
     const memberInfo = state.currentClub.memberInfo || {};
     const memberIds = state.currentClub.memberIds || [];
+    const dv = state.currentClub.deleteVote;
+    let danger = '';
+    if (isOpen) {
+      // 누구나 개설 그룹 → 삭제는 투표제
+      if (dv) {
+        const eligible = (dv.voterIds || []).filter(uid => memberIds.includes(uid));
+        const yesCount = eligible.filter(uid => dv.votes?.[uid] === 'yes').length;
+        const myVote = dv.votes?.[state.user.uid];
+        const isStarter = dv.startedBy === state.user.uid;
+        danger = `
+          <div class="vote-box">
+            <div class="vote-title">🗳️ 모임 삭제 투표 진행 중</div>
+            <div class="vote-sub">${escapeHtml(dv.startedByName || '누군가')}님이 시작 · 찬성 ${yesCount}/${eligible.length} · 7일 내 무응답 시 찬성 처리</div>
+            ${myVote ? `<div class="vote-myvote">내 응답: ${myVote === 'yes' ? '찬성' : '반대'}</div>` : `
+              <div class="vote-actions">
+                <button class="vote-btn vote-no" id="vote-no">반대 (삭제 안 함)</button>
+                <button class="vote-btn vote-yes" id="vote-yes">찬성 (삭제)</button>
+              </div>
+            `}
+            ${isStarter ? `<button class="btn-text" id="vote-cancel" style="margin-top:8px;">투표 취소</button>` : ''}
+          </div>
+        `;
+      } else {
+        danger = `
+          <button class="danger-btn" id="start-vote-btn">모임 삭제 투표 시작</button>
+          ${isHost ? '' : `<button class="danger-btn" id="leave-club-btn" style="margin-top:8px;">모임 탈퇴</button>`}
+        `;
+      }
+    } else {
+      // 개설자 고정 그룹
+      danger = isHost
+        ? `<button class="danger-btn" id="convert-open-btn" style="margin-bottom:8px;">누구나 열 수 있는 모임으로 전환</button>
+           <button class="danger-btn" id="delete-club-btn">모임 삭제</button>`
+        : `<button class="danger-btn" id="leave-club-btn">모임 탈퇴</button>`;
+    }
     content = `
       <div class="modal-title serif">멤버 (${memberIds.length})</div>
-      <div class="modal-sub">${escapeHtml(state.currentClub.name)}</div>
+      <div class="modal-sub">${escapeHtml(state.currentClub.name)} · ${isOpen ? '누구나 개설' : '개설자 관리'}</div>
       ${memberIds.map(uid => {
         const info = memberInfo[uid] || {};
         const isHostRow = uid === state.currentClub.hostId;
         return `
           <div class="member-row">
             <div class="avatar">${info.photo ? `<img src="${info.photo}" alt="">` : (info.name||'?')[0]}</div>
-            <div class="m-name">${escapeHtml(info.name || '(이름없음)')}${isHostRow ? ' <span style="font-size:11px; color:var(--accent);">· 모임장</span>' : ''}${uid === state.user.uid ? ' <span style="font-size:11px; color:var(--ink-mute);">· 나</span>' : ''}</div>
-            ${isHost && !isHostRow ? `<button class="m-kick" data-kick="${uid}" data-kick-name="${escapeHtml(info.name||'')}">내보내기</button>` : ''}
+            <div class="m-name">${escapeHtml(info.name || '(이름없음)')}${isHostRow ? ` <span style="font-size:11px; color:var(--accent);">· ${isOpen ? '개설자' : '개설자'}</span>` : ''}${uid === state.user.uid ? ' <span style="font-size:11px; color:var(--ink-mute);">· 나</span>' : ''}</div>
+            ${isHost && !isOpen && !isHostRow ? `<button class="m-kick" data-kick="${uid}" data-kick-name="${escapeHtml(info.name||'')}">내보내기</button>` : ''}
           </div>
         `;
       }).join('')}
-      <div class="danger-zone">
-        ${isHost
-          ? `<button class="danger-btn" id="delete-club-btn">모임 삭제</button>`
-          : `<button class="danger-btn" id="leave-club-btn">모임 탈퇴</button>`}
-      </div>
+      <div class="danger-zone">${danger}</div>
     `;
   } else if (state.modal === 'stats') {
     const s = computeStats();
@@ -2050,11 +2224,19 @@ const renderModal = () => {
   backdrop.querySelector('.modal-close').addEventListener('click', closeModal);
 
   if (state.modal === 'createClub') {
+    let selectedOpen = false;
+    document.querySelectorAll('.club-type').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedOpen = btn.dataset.open === 'true';
+        document.querySelectorAll('.club-type').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
     document.getElementById('create-club-submit').addEventListener('click', async () => {
       const name = document.getElementById('club-name').value.trim();
       if (!name) { toast('모임 이름을 입력하세요'); return; }
       const desc = document.getElementById('club-desc').value.trim();
-      await createClub(name, desc);
+      await createClub(name, desc, selectedOpen);
       closeModal();
     });
   } else if (state.modal === 'joinClub') {
@@ -2120,6 +2302,26 @@ const renderModal = () => {
     document.getElementById('delete-club-btn')?.addEventListener('click', async () => {
       await deleteClub(state.currentClubId);
       state.modal = null;
+    });
+    document.getElementById('convert-open-btn')?.addEventListener('click', async () => {
+      await convertToOpenMeetings(state.currentClubId);
+    });
+    document.getElementById('start-vote-btn')?.addEventListener('click', async () => {
+      await startDeleteVote(state.currentClubId);
+      // 모달 다시 그려서 투표 현황 반영
+      if (state.modal === 'members') render();
+    });
+    document.getElementById('vote-yes')?.addEventListener('click', async () => {
+      await castDeleteVote(state.currentClubId, 'yes');
+      if (state.modal === 'members') render();
+    });
+    document.getElementById('vote-no')?.addEventListener('click', async () => {
+      await castDeleteVote(state.currentClubId, 'no');
+      if (state.modal === 'members') render();
+    });
+    document.getElementById('vote-cancel')?.addEventListener('click', async () => {
+      await cancelDeleteVote(state.currentClubId);
+      if (state.modal === 'members') render();
     });
   } else if (state.modal === 'invite') {
     document.getElementById('copy-code').addEventListener('click', () => {
