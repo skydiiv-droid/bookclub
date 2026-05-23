@@ -75,7 +75,8 @@ a:hover { text-decoration: underline; }
   justify-content: center; align-items: center; padding: 40px 24px;
   text-align: center; gap: 32px;
 }
-.login-mark { font-size: 56px; line-height: 1; margin-bottom: 8px; }
+.login-mark { font-size: 56px; line-height: 1; margin-bottom: 8px; color: var(--accent); }
+.login-log { font-style: italic; letter-spacing: 0.12em; color: var(--accent); }
 .login h1 { font-size: 40px; font-weight: 400; letter-spacing: -0.02em; }
 .login h1 em { font-style: italic; color: var(--accent); }
 .login p { color: var(--ink-soft); max-width: 280px; font-size: 14px; }
@@ -302,9 +303,14 @@ a:hover { text-decoration: underline; }
 .book-result-author { font-size: 11px; color: var(--ink-mute); }
 .book-manual-btn { margin-top: 8px; font-size: 12px; color: var(--accent); font-weight: 500; }
 .loc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-.loc-chip { padding: 6px 12px; border-radius: 999px; font-size: 13px; background: var(--bg-soft); color: var(--ink-soft); border: 1px solid transparent; transition: all 0.15s ease; }
-.loc-chip:hover { border-color: var(--accent-light); }
-.loc-chip.active { background: var(--accent); color: white; }
+.phrase-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.phrase-chip { display: inline-flex; align-items: center; gap: 2px; padding: 0 4px 0 12px; border-radius: 999px; font-size: 13px; background: var(--bg-soft); color: var(--ink-soft); border: 1px solid transparent; transition: all 0.15s ease; }
+.phrase-chip.active { background: var(--accent); color: white; }
+.phrase-chip-text { cursor: pointer; padding: 6px 0; }
+.phrase-chip-x { width: 20px; height: 20px; border-radius: 999px; font-size: 10px; color: var(--ink-mute); display: grid; place-items: center; flex-shrink: 0; }
+.phrase-chip-x:hover { background: var(--danger); color: white; }
+.phrase-chip.active .phrase-chip-x { color: rgba(255,255,255,0.7); }
+.detail-topic { color: var(--ink-soft); font-size: 13px; margin-top: 4px; }
 .link-chip { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--bg-card); border: 1px solid var(--line-soft); border-radius: 10px; margin-bottom: 6px; }
 .link-chip-info { flex: 1; min-width: 0; }
 .link-chip-label { font-size: 13px; font-weight: 500; }
@@ -433,6 +439,16 @@ a:hover { text-decoration: underline; }
 }
 .reflection-author { font-size: 12px; color: var(--accent); font-weight: 600; margin-bottom: 6px; }
 .reflection-body { font-size: 14px; line-height: 1.6; white-space: pre-wrap; font-family: 'Fraunces', serif; font-style: italic; color: var(--ink-soft); }
+.quotes { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.quote { margin: 0; padding: 10px 14px; background: var(--bg-soft); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; }
+.quote-text { font-family: 'Fraunces', serif; font-style: italic; font-size: 14px; color: var(--ink); line-height: 1.5; }
+.quote-text::before { content: '“'; color: var(--accent); font-size: 18px; }
+.quote-text::after { content: '”'; color: var(--accent); font-size: 18px; }
+.quote-page { display: block; font-family: 'Pretendard Variable', sans-serif; font-style: normal; font-size: 11px; color: var(--ink-mute); margin-top: 4px; }
+.ref-field-label { font-size: 12px; color: var(--ink-soft); font-weight: 600; margin: 16px 0 6px; }
+.quote-chip { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--bg-card); border: 1px solid var(--line-soft); border-radius: 10px; margin-bottom: 6px; }
+.quote-chip-text { flex: 1; font-size: 13px; font-family: 'Fraunces', serif; font-style: italic; color: var(--ink-soft); line-height: 1.4; }
+.quote-chip-page { font-family: 'Pretendard Variable', sans-serif; font-style: normal; font-size: 11px; color: var(--ink-mute); }
 
 /* Buttons */
 .btn-primary {
@@ -991,6 +1007,7 @@ const createMeeting = async (clubId, data) => {
   await addDoc(collection(db, 'clubs', clubId, 'meetings'), {
     meetingDate: Timestamp.fromDate(data.meetingDate),
     location: data.location || '',
+    topic: data.topic || '',            // 토론 주제
     books: data.books || [],            // [{title, author, description, link, thumbnail}]
     relatedLinks: data.relatedLinks || [],  // 유튜브 등 관련 링크 [{label, url}]
     extraInfo: data.extraInfo || '',
@@ -999,8 +1016,8 @@ const createMeeting = async (clubId, data) => {
     createdAt: serverTimestamp(),
     createdBy: state.user.uid
   });
-  // 새 장소면 클럽 단골 장소에 저장
-  await rememberLocation(clubId, data.location);
+  await rememberPhrase(clubId, 'favoriteLocations', data.location);
+  await rememberPhrase(clubId, 'favoriteTopics', data.topic);
   toast('회차가 생성됐어요');
 };
 
@@ -1008,26 +1025,46 @@ const updateMeeting = async (clubId, meetingId, data) => {
   await updateDoc(doc(db, 'clubs', clubId, 'meetings', meetingId), {
     meetingDate: Timestamp.fromDate(data.meetingDate),
     location: data.location || '',
+    topic: data.topic || '',
     books: data.books || [],
     relatedLinks: data.relatedLinks || [],
     extraInfo: data.extraInfo || '',
     updatedAt: serverTimestamp()
   });
-  await rememberLocation(clubId, data.location);
+  await rememberPhrase(clubId, 'favoriteLocations', data.location);
+  await rememberPhrase(clubId, 'favoriteTopics', data.topic);
   toast('회차가 수정됐어요');
 };
 
-// 단골 장소 저장 (클럽 문서의 favoriteLocations 배열, 최대 6개)
-const rememberLocation = async (clubId, loc) => {
-  if (!loc || !loc.trim()) return;
+// 자주 쓰는 문구 저장 (장소/주제 공용, 최대 8개)
+const rememberPhrase = async (clubId, field, value) => {
+  if (!value || !value.trim()) return;
   const club = state.currentClub;
   if (!club) return;
-  const existing = club.favoriteLocations || [];
-  if (existing.includes(loc.trim())) return;
-  const updated = [loc.trim(), ...existing].slice(0, 6);
+  const existing = club[field] || [];
+  if (existing.includes(value.trim())) return;
+  const updated = [value.trim(), ...existing].slice(0, 8);
   try {
-    await updateDoc(doc(db, 'clubs', clubId), { favoriteLocations: updated });
+    await updateDoc(doc(db, 'clubs', clubId), { [field]: updated });
   } catch (e) { /* 권한 없으면 조용히 무시 */ }
+};
+
+// 자주 쓰는 문구 삭제 (✕ 버튼)
+const removePhrase = async (clubId, field, value) => {
+  const club = state.currentClub;
+  if (!club) return;
+  if (!confirm(`'${value}'을(를) 자주 쓰는 목록에서 삭제할까요?`)) return false;
+  const updated = (club[field] || []).filter(v => v !== value);
+  try {
+    await updateDoc(doc(db, 'clubs', clubId), { [field]: updated });
+    // 로컬 상태도 즉시 반영
+    state.currentClub[field] = updated;
+    toast('삭제됐어요');
+    return true;
+  } catch (e) {
+    toast('삭제 권한이 없어요');
+    return false;
+  }
 };
 
 // 기존 단권 데이터(bookTitle/bookDescription/bookLink)를 books 배열로 정규화
@@ -1049,7 +1086,7 @@ const firstBookTitle = (mtg) => {
 // ============================================================
 // ⬇️ 나중에 발급받은 Google Books API 키를 따옴표 안에 붙여넣으세요 (예: "AIzaSy...")
 //    키가 없으면 검색은 동작하지 않습니다 (구글이 키 없는 호출을 막음).
-const GOOGLE_BOOKS_KEY = "";
+const GOOGLE_BOOKS_KEY = "AIzaSyCQg5yIVX3xQ31MBDGP4ZlOF15Mh5covuU";
 
 const searchGoogleBooks = async (queryStr) => {
   if (!queryStr || queryStr.trim().length < 2) return [];
@@ -1124,6 +1161,8 @@ let commentsUnsub = null;
 let editingBooks = [];   // 회차 생성/수정 중인 도서 목록
 let editingLinks = [];   // 회차 생성/수정 중인 관련 링크 [{label, url}]
 let editingRecBooks = [];// 소감 추천 책 목록
+let editingQuotes = [];  // 소감 기억하고 싶은 문구 [{text, page}]
+let editingRefLinks = [];// 소감 관련 링크 [{label, url}]
 let bookSearchTimer = null;
 let reflectionsUnsub = null;
 
@@ -1158,13 +1197,17 @@ const deleteComment = async (clubId, meetingId, commentId) => {
   await deleteDoc(doc(db, 'clubs', clubId, 'meetings', meetingId, 'comments', commentId));
 };
 
-const saveReflection = async (clubId, meetingId, text, rating, recBooks) => {
-  if (!text.trim() && !rating && (!recBooks || recBooks.length === 0)) { toast('별점·소감·추천 책 중 하나는 남겨주세요'); return; }
+const saveReflection = async (clubId, meetingId, data) => {
+  const { text, rating, recBooks, quotes, links } = data;
+  const hasContent = text.trim() || rating || (recBooks && recBooks.length) || (quotes && quotes.length) || (links && links.length);
+  if (!hasContent) { toast('항목 중 하나는 남겨주세요'); return; }
   await setDoc(doc(db, 'clubs', clubId, 'meetings', meetingId, 'reflections', state.user.uid), {
     authorId: state.user.uid,
     authorName: state.user.name,
     text: text.trim(),
     rating: rating || 0,        // 0 = 별점 없음, 1~5
+    quotes: (quotes || []).map(q => ({ text: q.text || '', page: q.page || '' })).filter(q => q.text),
+    links: (links || []).map(l => ({ label: l.label || '관련 링크', url: l.url || '' })).filter(l => l.url),
     recBooks: (recBooks || []).slice(0, 3).map(b => ({
       title: b.title || '', author: b.author || '', link: b.link || '', thumbnail: b.thumbnail || ''
     })),
@@ -1207,11 +1250,11 @@ const renderLogin = () => {
   const lastEmail = lsGet(LS_LAST_EMAIL);
   $app.innerHTML = `
     <div class="login">
-      <div class="login-mark serif">❦</div>
+      <div class="login-mark serif">◯</div>
       <div>
-        <h1 class="serif">읽고, <em>나누고</em>,<br>기록하다</h1>
+        <h1 class="serif">비움 <em>&amp;</em> 채움<br><span class="login-log">LOG</span></h1>
       </div>
-      <p>책모임 일정을 함께 정하고, 누가 왔는지, 무엇을 읽었는지 차곡차곡 남겨두는 공간.</p>
+      <p>복잡함을 비워내고, 성찰로 채워가는 여정.</p>
       <button class="google-btn" id="signin-btn">
         <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/></svg>
         Google로 시작하기
@@ -1516,6 +1559,7 @@ const renderMeetingDetail = () => {
           ${isPast ? '<span class="meeting-status" style="background:var(--line); color:var(--ink-soft);">완료</span>' : '<span class="meeting-status">예정</span>'}
         </div>
         ${mtg.location ? `<div class="detail-location">📍 ${escapeHtml(mtg.location)}</div>` : ''}
+        ${mtg.topic ? `<div class="detail-topic">💬 ${escapeHtml(mtg.topic)}</div>` : ''}
         ${(() => {
           const books = getBooks(mtg);
           if (books.length === 0) return `<h1 class="detail-book-title">(책 미정)</h1>`;
@@ -1607,6 +1651,21 @@ const renderMeetingDetail = () => {
             <div class="reflection">
               <div class="reflection-author">${escapeHtml(r.authorName || '?')}${r.rating ? ` <span class="reflection-stars">${renderStars(r.rating)}</span>` : ''}</div>
               ${r.text ? `<div class="reflection-body">${linkify(r.text)}</div>` : ''}
+              ${(Array.isArray(r.quotes) && r.quotes.length > 0) ? `
+                <div class="quotes">
+                  ${r.quotes.map(q => `
+                    <blockquote class="quote">
+                      <span class="quote-text">${escapeHtml(q.text)}</span>
+                      ${q.page ? `<span class="quote-page">— p.${escapeHtml(q.page)}</span>` : ''}
+                    </blockquote>
+                  `).join('')}
+                </div>
+              ` : ''}
+              ${(Array.isArray(r.links) && r.links.length > 0) ? `
+                <div class="related-links" style="margin-top:8px;">
+                  ${r.links.map(l => `<a class="related-link" href="${escapeHtml(l.url)}" target="_blank" rel="noopener">🔗 ${escapeHtml(l.label || '관련 링크')}</a>`).join('')}
+                </div>
+              ` : ''}
               ${(Array.isArray(r.recBooks) && r.recBooks.length > 0) ? `
                 <div class="rec-books">
                   <div class="rec-books-label">추천 책</div>
@@ -1626,12 +1685,23 @@ const renderMeetingDetail = () => {
           `).join('') : '<div class="empty" style="padding:16px;">아직 소감이 없어요</div>'}
           ${!locked ? `
             <div style="margin-top:12px;">
-              <div class="detail-section-title">내 평가 ${myReflection ? '(수정 가능)' : ''}</div>
+              <div class="detail-section-title">평가 ${myReflection ? '(수정 가능)' : ''}</div>
               <div class="star-picker" id="star-picker">
                 ${[1,2,3,4,5].map(n => `<button class="star-btn" data-star="${n}" type="button">${n <= (myReflection?.rating || 0) ? starFilled() : starEmpty}</button>`).join('')}
                 <span class="star-clear" id="star-clear" style="${(myReflection?.rating || 0) ? '' : 'display:none;'}">지우기</span>
               </div>
-              <textarea id="reflection-input" placeholder="이번 회차에서 느낀 점이나 인상 깊었던 부분을 짧게 남겨보세요 (선택)" style="width:100%; padding:12px 14px; border:1px solid var(--line); background:var(--bg-card); border-radius:10px; min-height:80px; font-size:14px; resize:vertical; margin-top:10px;">${escapeHtml(myReflection?.text || '')}</textarea>
+
+              <div class="ref-field-label">소감</div>
+              <textarea id="reflection-input" placeholder="이번 회차에서 느낀 점을 남겨보세요 (선택)" style="width:100%; padding:12px 14px; border:1px solid var(--line); background:var(--bg-card); border-radius:10px; min-height:80px; font-size:14px; resize:vertical;">${escapeHtml(myReflection?.text || '')}</textarea>
+
+              <div class="ref-field-label">기억하고 싶은 문구 <span style="color:var(--ink-mute); font-weight:400;">(여러 개 가능)</span></div>
+              <div id="quote-editor"></div>
+              <button type="button" class="book-manual-btn" id="quote-add-btn">+ 문구 추가</button>
+
+              <div class="ref-field-label">관련 링크 <span style="color:var(--ink-mute); font-weight:400;">(선택)</span></div>
+              <div id="ref-link-editor"></div>
+              <button type="button" class="book-manual-btn" id="ref-link-add-btn">+ 링크 추가</button>
+
               <div class="rec-editor-wrap">
                 <div class="rec-editor-label">비슷한 책 추천 <span style="color:var(--ink-mute);">(최대 3권, 선택)</span></div>
                 <div id="rec-book-editor"></div>
@@ -1710,6 +1780,59 @@ const renderMeetingDetail = () => {
   });
   document.getElementById('star-clear')?.addEventListener('click', () => { pickedRating = 0; refreshStars(); });
 
+  // 기억하고 싶은 문구 에디터
+  editingQuotes = Array.isArray(myReflection?.quotes) ? myReflection.quotes.map(q => ({...q})) : [];
+  const renderQuoteEditor = () => {
+    const wrap = document.getElementById('quote-editor');
+    if (!wrap) return;
+    wrap.innerHTML = editingQuotes.map((q, i) => `
+      <div class="quote-chip">
+        <div class="quote-chip-text">"${escapeHtml(q.text)}"${q.page ? ` <span class="quote-chip-page">p.${escapeHtml(q.page)}</span>` : ''}</div>
+        <button type="button" class="book-chip-remove" data-rmquote="${i}">✕</button>
+      </div>
+    `).join('');
+    wrap.querySelectorAll('[data-rmquote]').forEach(btn => {
+      btn.addEventListener('click', () => { editingQuotes.splice(parseInt(btn.dataset.rmquote), 1); renderQuoteEditor(); });
+    });
+  };
+  renderQuoteEditor();
+  document.getElementById('quote-add-btn')?.addEventListener('click', () => {
+    const t = prompt('기억하고 싶은 문구를 입력하세요');
+    if (!t || !t.trim()) return;
+    const p = prompt('페이지 (선택, 비워도 됨)') || '';
+    editingQuotes.push({ text: t.trim(), page: p.trim() });
+    renderQuoteEditor();
+  });
+
+  // 소감 관련 링크 에디터
+  editingRefLinks = Array.isArray(myReflection?.links) ? myReflection.links.map(l => ({...l})) : [];
+  const renderRefLinkEditor = () => {
+    const wrap = document.getElementById('ref-link-editor');
+    if (!wrap) return;
+    wrap.innerHTML = editingRefLinks.map((l, i) => `
+      <div class="link-chip">
+        <div class="link-chip-info">
+          <div class="link-chip-label">${escapeHtml(l.label || '링크')}</div>
+          <div class="link-chip-url">${escapeHtml(l.url)}</div>
+        </div>
+        <button type="button" class="book-chip-remove" data-rmreflink="${i}">✕</button>
+      </div>
+    `).join('');
+    wrap.querySelectorAll('[data-rmreflink]').forEach(btn => {
+      btn.addEventListener('click', () => { editingRefLinks.splice(parseInt(btn.dataset.rmreflink), 1); renderRefLinkEditor(); });
+    });
+  };
+  renderRefLinkEditor();
+  document.getElementById('ref-link-add-btn')?.addEventListener('click', () => {
+    const url = prompt('링크 URL을 붙여넣으세요');
+    if (!url || !url.trim()) return;
+    let n = url.trim();
+    if (!/^https?:\/\//i.test(n)) n = 'https://' + n;
+    const label = prompt('링크 이름 (선택)') || '관련 링크';
+    editingRefLinks.push({ label: label.trim() || '관련 링크', url: n });
+    renderRefLinkEditor();
+  });
+
   // 추천 책 에디터
   editingRecBooks = Array.isArray(myReflection?.recBooks) ? myReflection.recBooks.map(b => ({...b})) : [];
   const renderRecEditor = () => {
@@ -1784,7 +1907,13 @@ const renderMeetingDetail = () => {
 
   document.getElementById('save-reflection-btn')?.addEventListener('click', async () => {
     const ta = document.getElementById('reflection-input');
-    await saveReflection(state.currentClubId, mtg.id, ta.value, pickedRating, editingRecBooks);
+    await saveReflection(state.currentClubId, mtg.id, {
+      text: ta.value,
+      rating: pickedRating,
+      quotes: editingQuotes,
+      links: editingRefLinks,
+      recBooks: editingRecBooks
+    });
   });
 };
 
@@ -1804,6 +1933,7 @@ const shareMeeting = async (mtg) => {
   }
   lines.push(`🗓️ ${date}`);
   if (mtg.location) lines.push(`📍 ${mtg.location}`);
+  if (mtg.topic) lines.push(`💬 ${mtg.topic}`);
   if (mtg.extraInfo) lines.push(`ℹ️ ${mtg.extraInfo}`);
   lines.push('', url);
   const text = lines.join('\n');
@@ -2046,6 +2176,14 @@ const renderModal = () => {
       editingLinks = [];
     }
     const favLocs = state.currentClub.favoriteLocations || [];
+    const favTopics = state.currentClub.favoriteTopics || [];
+    const phraseChips = (arr, field, targetInput) => arr.length > 0
+      ? `<div class="phrase-chips">${arr.map(v => `
+          <span class="phrase-chip" data-fill="${escapeHtml(v)}" data-target="${targetInput}">
+            <span class="phrase-chip-text">${escapeHtml(v)}</span>
+            <button type="button" class="phrase-chip-x" data-delphrase="${escapeHtml(v)}" data-delfield="${field}">✕</button>
+          </span>`).join('')}</div>`
+      : '';
     content = `
       <div class="modal-title serif">${editing ? '회차 수정' : '새 회차 만들기'}</div>
       <div class="modal-sub">${escapeHtml(state.currentClub.name)}</div>
@@ -2061,8 +2199,13 @@ const renderModal = () => {
       </div>
       <div class="form-field">
         <label>장소</label>
-        ${favLocs.length > 0 ? `<div class="loc-chips">${favLocs.map(l => `<button type="button" class="loc-chip" data-loc="${escapeHtml(l)}">${escapeHtml(l)}</button>`).join('')}</div>` : ''}
+        ${phraseChips(favLocs, 'favoriteLocations', 'm-location')}
         <input id="m-location" placeholder="장소 입력 (자주 가는 곳은 위 버튼)" value="${editing ? escapeHtml(mtg.location || '') : ''}">
+      </div>
+      <div class="form-field">
+        <label>토론 주제 (선택)</label>
+        ${phraseChips(favTopics, 'favoriteTopics', 'm-topic')}
+        <input id="m-topic" placeholder="예: 작가의 의도 / 결말 해석 (자주 쓰는 건 위 버튼)" value="${editing ? escapeHtml(mtg.topic || '') : ''}">
       </div>
       <div class="form-field">
         <label>도서 <span style="color:var(--ink-mute); font-weight:400;">(여러 권 가능)</span></label>
@@ -2253,12 +2396,21 @@ const renderModal = () => {
     renderLinkEditor();
     document.getElementById('book-manual-btn')?.addEventListener('click', openManualBookEntry);
     document.getElementById('link-add-btn')?.addEventListener('click', addLinkPrompt);
-    // 단골 장소 칩 → 입력란 채우기
-    document.querySelectorAll('[data-loc]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.getElementById('m-location').value = btn.dataset.loc;
-        document.querySelectorAll('[data-loc]').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+    // 자주 쓰는 문구 칩 → 입력란 채우기 (장소·주제 공용)
+    document.querySelectorAll('[data-fill]').forEach(chip => {
+      chip.querySelector('.phrase-chip-text')?.addEventListener('click', () => {
+        const input = document.getElementById(chip.dataset.target);
+        if (input) input.value = chip.dataset.fill;
+        document.querySelectorAll(`[data-target="${chip.dataset.target}"]`).forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+      });
+    });
+    // 칩 ✕ → 자주 쓰는 목록에서 삭제 (확인 팝업 포함)
+    document.querySelectorAll('[data-delphrase]').forEach(x => {
+      x.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const ok = await removePhrase(state.currentClubId, x.dataset.delfield, x.dataset.delphrase);
+        if (ok) render();  // 모달 다시 그려 칩 갱신
       });
     });
     document.getElementById('meeting-submit').addEventListener('click', async () => {
@@ -2270,6 +2422,7 @@ const renderModal = () => {
       const payload = {
         meetingDate: dt,
         location: document.getElementById('m-location').value.trim(),
+        topic: document.getElementById('m-topic').value.trim(),
         books: editingBooks.map(b => ({
           title: b.title || '',
           author: b.author || '',
