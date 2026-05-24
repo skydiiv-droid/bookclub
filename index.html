@@ -4,7 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#f5efe6">
-<title>책모임</title>
+<title>비움 &amp; 채움 LOG</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="비움&채움">
+<link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&display=swap" rel="stylesheet">
@@ -82,6 +87,21 @@ a:hover { text-decoration: underline; }
 .login p { color: var(--ink-soft); max-width: 280px; font-size: 14px; }
 .last-account { font-size: 12px !important; color: var(--ink-mute) !important; }
 .last-account strong { color: var(--ink-soft); font-weight: 600; }
+.notif-banner { background: var(--accent-bg); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+.notif-banner-text { margin-bottom: 12px; }
+.notif-banner-text strong { display: block; font-size: 14px; color: var(--accent); margin-bottom: 4px; }
+.notif-banner-text span { font-size: 12px; color: var(--ink-soft); line-height: 1.45; }
+.notif-banner-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.notif-later { padding: 8px 16px; border-radius: 999px; font-size: 13px; color: var(--ink-soft); }
+.notif-on { padding: 8px 18px; border-radius: 999px; font-size: 13px; font-weight: 500; background: var(--accent); color: white; }
+.notices-board { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+.notice-item { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; background: var(--accent-bg); border-radius: 12px; }
+.notice-icon { font-size: 15px; flex-shrink: 0; }
+.notice-body { flex: 1; min-width: 0; }
+.notice-text { font-size: 13px; color: var(--ink); line-height: 1.5; white-space: pre-wrap; }
+.notice-meta { font-size: 11px; color: var(--ink-mute); margin-top: 4px; }
+.notice-del { width: 22px; height: 22px; border-radius: 999px; font-size: 11px; color: var(--ink-mute); flex-shrink: 0; }
+.notice-del:hover { background: var(--danger); color: white; }
 .google-btn {
   display: inline-flex; align-items: center; gap: 12px;
   padding: 14px 28px; background: var(--ink); color: #faf6ee;
@@ -577,6 +597,9 @@ import {
   updateDoc, deleteDoc, query, where, orderBy, onSnapshot,
   arrayUnion, arrayRemove, serverTimestamp, Timestamp, deleteField
 } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+import {
+  getMessaging, getToken, onMessage
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging.js";
 
 // ============================================================
 // 1) FIREBASE CONFIG — replace with your own
@@ -595,6 +618,11 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
+// 푸시 알림 (FCM)
+const VAPID_KEY = "BH9y4M50ySebc77lE8Ba9ob_uHTeb5c_pvZpVveudr4dq46M8__xjrWi2li0fPvn5MmgD1FAd9mWkGZZVxddpoY";
+let messaging = null;
+try { messaging = getMessaging(app); } catch (e) { console.warn('FCM 미지원 환경', e); }
+
 // ============================================================
 // 2) STATE
 // ============================================================
@@ -606,6 +634,7 @@ const state = {
   currentClubId: null,
   currentClub: null,
   meetings: [],
+  notices: [],
   currentMeetingId: null,
   meetingComments: [],
   meetingReflections: [],
@@ -712,6 +741,7 @@ onAuthStateChanged(auth, async (user) => {
     }, { merge: true });
     state.view = 'clubList';
     listenToClubs();
+    initPushOnLogin();
   } else {
     state.user = null;
     clearListeners();
@@ -738,6 +768,71 @@ const handleSignOut = async () => {
   try { localStorage.removeItem(LS_LOGIN_AT); } catch(e) {}
   clearListeners();
   await signOut(auth);
+};
+
+// ============================================================
+// 4b) 푸시 알림 권한 + 토큰 등록
+// ============================================================
+const LS_NOTIF_ASKED = 'bookclub_notif_asked';
+
+// 현재 알림 상태: 'unsupported' | 'granted' | 'denied' | 'default'
+const notifStatus = () => {
+  if (!messaging || !('Notification' in window)) return 'unsupported';
+  return Notification.permission; // granted | denied | default
+};
+
+// FCM 토큰을 발급받아 Firestore users/{uid}.fcmTokens 에 저장
+const registerPushToken = async () => {
+  if (!messaging) return false;
+  try {
+    // Service Worker 등록 (백그라운드 수신용)
+    const reg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+    const token = await getToken(messaging, {
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: reg
+    });
+    if (!token) return false;
+    // 토큰 저장 (배열로, 기기 여러 개 대응)
+    await setDoc(doc(db, 'users', state.user.uid), {
+      fcmTokens: arrayUnion(token),
+      name: state.user.name,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    return true;
+  } catch (e) {
+    console.error('푸시 토큰 등록 실패', e);
+    return false;
+  }
+};
+
+// 사전 안내 후 시스템 권한 요청
+const requestNotifPermission = async () => {
+  if (!('Notification' in window)) { toast('이 기기는 알림을 지원하지 않아요'); return; }
+  lsSet(LS_NOTIF_ASKED, '1');
+  let perm = Notification.permission;
+  if (perm === 'default') {
+    perm = await Notification.requestPermission();
+  }
+  if (perm === 'granted') {
+    const ok = await registerPushToken();
+    toast(ok ? '알림이 켜졌어요' : '알림 설정 중 문제가 생겼어요');
+  } else if (perm === 'denied') {
+    toast('알림이 차단돼 있어요. 브라우저 설정에서 허용해주세요.');
+  }
+  render();
+};
+
+// 앱 진입 시: 이미 허용한 사람은 토큰 조용히 갱신 (포그라운드 메시지 표시도 설정)
+const initPushOnLogin = async () => {
+  if (notifStatus() === 'granted') {
+    await registerPushToken();
+  }
+  if (messaging) {
+    onMessage(messaging, (payload) => {
+      const title = payload.notification?.title || payload.data?.title || '새 알림';
+      toast(title);
+    });
+  }
 };
 
 // ============================================================
@@ -1000,7 +1095,30 @@ const listenToMeetings = (clubId) => {
     state.meetings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     if (state.view === 'club') render();
   });
-  state.unsubs.push(u);
+  // 공지 리스너
+  const qn = query(collection(db, 'clubs', clubId, 'notices'), orderBy('createdAt', 'desc'));
+  const un = onSnapshot(qn, snap => {
+    state.notices = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (state.view === 'club') render();
+  });
+  state.unsubs.push(u, un);
+};
+
+const postNotice = async (clubId, text) => {
+  if (!text.trim()) return;
+  await addDoc(collection(db, 'clubs', clubId, 'notices'), {
+    text: text.trim(),
+    authorId: state.user.uid,
+    authorName: state.user.name,
+    createdAt: serverTimestamp()
+  });
+  toast('공지가 등록됐어요');
+};
+
+const deleteNotice = async (clubId, noticeId) => {
+  if (!confirm('이 공지를 삭제할까요?')) return;
+  await deleteDoc(doc(db, 'clubs', clubId, 'notices', noticeId));
+  toast('삭제됐어요');
 };
 
 const createMeeting = async (clubId, data) => {
@@ -1283,6 +1401,19 @@ const renderClubList = () => {
       <h2 class="section-title serif">참여 중인 모임</h2>
       <p class="section-sub">${state.clubs.length}개의 모임</p>
 
+      ${notifStatus() === 'default' ? `
+        <div class="notif-banner">
+          <div class="notif-banner-text">
+            <strong>🔔 모임 알림 받기</strong>
+            <span>새 회차와 다가오는 모임 일정을 알려드려요.</span>
+          </div>
+          <div class="notif-banner-actions">
+            <button class="notif-later" id="notif-later">나중에</button>
+            <button class="notif-on" id="notif-on">알림 켜기</button>
+          </div>
+        </div>
+      ` : ''}
+
       ${state.clubs.length === 0 && state.pendingClubs.length === 0 ? `
         <div class="empty">
           <span class="serif">아직 참여 중인 모임이 없어요</span>
@@ -1317,6 +1448,8 @@ const renderClubList = () => {
     </div>
   `;
   document.getElementById('signout-btn').addEventListener('click', handleSignOut);
+  document.getElementById('notif-on')?.addEventListener('click', requestNotifPermission);
+  document.getElementById('notif-later')?.addEventListener('click', () => { lsSet(LS_NOTIF_ASKED, '1'); toast('나중에 멤버 메뉴에서 켤 수 있어요'); });
   document.querySelectorAll('[data-club-id]').forEach(b => {
     b.addEventListener('click', () => openClub(b.dataset.clubId));
   });
@@ -1340,6 +1473,7 @@ const backToClubList = () => {
   state.currentClub = null;
   state.currentMeetingId = null;
   state.meetings = [];
+  state.notices = [];
   if (commentsUnsub) { commentsUnsub(); commentsUnsub = null; }
   if (reflectionsUnsub) { reflectionsUnsub(); reflectionsUnsub = null; }
   state.view = 'clubList';
@@ -1377,15 +1511,35 @@ const renderClub = () => {
       <h2 class="section-title serif">${escapeHtml(state.currentClub.name)}</h2>
       <p class="section-sub">${state.currentClub.memberIds?.length || 0}명 · ${state.currentClub.openMeetings ? '누구나 모임을 열 수 있어요' : '개설 ' + escapeHtml(state.currentClub.hostName || '')}${state.currentClub.description ? ' · ' + escapeHtml(state.currentClub.description) : ''}</p>
 
+      ${(state.notices && state.notices.length > 0) ? `
+        <div class="notices-board">
+          ${state.notices.slice(0, 3).map(n => `
+            <div class="notice-item">
+              <div class="notice-icon">📢</div>
+              <div class="notice-body">
+                <div class="notice-text">${linkify(n.text)}</div>
+                <div class="notice-meta">${escapeHtml(n.authorName || '')}${n.createdAt ? ' · ' + new Date(n.createdAt.toDate()).toLocaleDateString('ko-KR', {month:'short', day:'numeric'}) : ''}</div>
+              </div>
+              ${canManage ? `<button class="notice-del" data-delnotice="${n.id}">✕</button>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+
       ${state.calendarMode === 'month' ? renderMonthView() : renderListView()}
 
       <button class="action-btn" id="stats-btn" style="margin-top:16px;">📊 모임 통계</button>
+      ${canManage ? `<button class="action-btn" id="notice-btn" style="margin-top:10px;">📢 공지 올리기</button>` : ''}
       ${canManage ? `<button class="action-btn" id="create-meeting-btn" style="margin-top:10px;">${iconPlus} 새 회차 만들기</button>` : ''}
     </div>
   `;
   document.getElementById('back-btn').addEventListener('click', backToClubList);
   document.getElementById('members-btn')?.addEventListener('click', () => { state.modal = 'members'; render(); });
   document.getElementById('stats-btn')?.addEventListener('click', () => { state.modal = 'stats'; render(); });
+  document.getElementById('notice-btn')?.addEventListener('click', () => { state.modal = 'notice'; render(); });
+  document.querySelectorAll('[data-delnotice]').forEach(b => {
+    b.addEventListener('click', () => deleteNotice(state.currentClubId, b.dataset.delnotice));
+  });
   document.querySelectorAll('.view-toggle button').forEach(b => {
     b.addEventListener('click', () => { state.calendarMode = b.dataset.mode; render(); });
   });
@@ -2156,6 +2310,16 @@ const renderModal = () => {
       </div>
       <button class="btn-primary" id="join-club-submit" style="width:100%; padding:12px;">가입 신청</button>
     `;
+  } else if (state.modal === 'notice') {
+    content = `
+      <div class="modal-title serif">공지 올리기</div>
+      <div class="modal-sub">멤버 전원에게 알림이 가요.</div>
+      <div class="form-field">
+        <label>공지 내용</label>
+        <textarea id="notice-text" placeholder="예: 이번 주는 카페가 휴무라 장소가 변경됐어요. 또는 다음 책 미리 읽어오세요!" rows="4"></textarea>
+      </div>
+      <button class="btn-primary" id="notice-submit" style="width:100%; padding:12px;">공지 등록</button>
+    `;
   } else if (state.modal === 'createMeeting' || state.modal === 'editMeeting') {
     const editing = state.modal === 'editMeeting';
     const mtg = editing ? state.meetings.find(m => m.id === state.currentMeetingId) : null;
@@ -2387,6 +2551,13 @@ const renderModal = () => {
       const code = document.getElementById('join-code').value;
       if (!code.trim()) { toast('코드를 입력하세요'); return; }
       await joinClubByCode(code);
+      closeModal();
+    });
+  } else if (state.modal === 'notice') {
+    document.getElementById('notice-submit').addEventListener('click', async () => {
+      const text = document.getElementById('notice-text').value;
+      if (!text.trim()) { toast('공지 내용을 입력하세요'); return; }
+      await postNotice(state.currentClubId, text);
       closeModal();
     });
   } else if (state.modal === 'createMeeting' || state.modal === 'editMeeting') {
